@@ -14,7 +14,7 @@ It's NOT a copy: original story, worlds, characters and mechanics.
 - Platform: **Android-first native app**, then iOS, plus a small World 1 web demo for marketing.
 - Engine: **Godot 4 (latest stable, ≥ 4.4) with typed GDScript**. Mobile renderer, Compatibility fallback. Jolt as the 3D physics engine. GUT for tests. GitHub Actions + headless Godot for CI/exports.
 - Architecture: a **pure simulation that always resolves the same way** in `game/sim/` (RefCounted, integer grid, fixed 10 Hz tick, seeded RNG, no Nodes). `SimStep.step(state, intent) -> {state, events}`. Rendering, VFX, audio and haptics only react to sim events. Jolt is cosmetic only; navigation (Recast) is for hub NPCs only. Puzzle enemies use grid A*.
-- Third-party libraries (in `third_party/`, git-ignored; run `tools/setup_third_party.sh` to clone them):
+- Third-party libraries (in `third_party/`, git-ignored; run `tools/setup_third_party.ps1` (Windows) or `tools/setup_third_party.sh` to clone them):
   pixelfx (pixel VFX → sprite sheets → AnimatedSprite3D; its Claude skill is in `.claude/skills/pixelfx`),
   JoltPhysics + recastnavigation + meshoptimizer (built into Godot), Effekseer (Godot 4 plugin, boss VFX),
   Material Maker (materials), FastNoise2 (noise/variety), Terrain3D + godot_voxel (optional scenery only; keep or
