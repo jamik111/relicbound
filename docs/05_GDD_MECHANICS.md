@@ -1,0 +1,90 @@
+# 05 — Game Design: Mechanics & Systems
+
+## Camera & view
+Top-down 2.5D. Orthographic camera tilted to 35° and slightly rotated (5°), so walls have visible faces.
+"Gravity" in the sim points **south (screen-down)**. The 3D tilt makes this read as "rolling down a slope" into
+the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors and checkpoints.
+
+## Simulation tick (the heart of the game)
+- 10 ticks/s by default (assist mode: 6). The player moves 1 tile per tick.
+- Order within one tick: **1) player intent → 2) tools → 3) falling/rolling objects (scanned bottom-to-top,
+  left-to-right) → 4) element flows (water/sand/lava) → 5) enemies → 6) triggers → 7) damage resolve.**
+- Each object has a `moving` flag. A falling object kills only if `moving == true` when it enters the
+  player's tile. Standing under a resting boulder is safe, as genre veterans expect.
+- The state is plain data, so it can be hashed, serialized for rewind and saves, and replayed in CI.
+
+## Core tiles & objects
+| Tile/Object | Behaviour |
+|---|---|
+| Floor | Walkable |
+| Wall / Ancient wall | Solid; ancient walls break with the Pick |
+| Dirt / Moss | Walkable; disappears when stepped on (dig). Supports objects above it |
+| Boulder (round) | Falls; rolls off round things; pushable sideways |
+| Crate (square) | Falls; does **not** roll; pushable; floats in water; burns in lava |
+| Gem (round) | Falls/rolls like a boulder, is collected on touch, and is safe to catch (it never kills) |
+| Red Sunshard | Rare gem in secrets; counts toward 100% |
+| Key / Door | 4 colours, each with a unique shape (♦ ● ▲ ■) for colour-blind players |
+| Pressure plate | Active while weighed down (by the player, a crate, a boulder or the decoy idol) |
+| Spike trap | Timed or proximity; telegraphs for 0.5 s |
+| Dart wall | Fires along a row on a timer; blocked by any object |
+| Cracked floor | Collapses one tick after you step off it; becomes a pit |
+| Pit | Fill it with a boulder or crate to make floor |
+| Checkpoint idol | Lights up; saves room state |
+| Secret wall | Faint crack; opens with the Pick or a falling boulder |
+
+## Relic Kit (story-gated tools)
+| Tool | Unlock | Verb | Puzzle uses |
+|---|---|---|---|
+| Satchel | Start | Carry keys/gems | — |
+| **Grapple-whip** | W1 L3 | Pull an object 1 tile toward you, or swing over a pit to an anchor post | Pulling boulders off ledges, crossing gaps |
+| **Lantern** | W1 L8 | Lights a radius in dark rooms; scares bats; lights braziers | Dark mazes, light puzzles (W2 mirrors) |
+| **Pick** | W2 L4 | Breaks ancient walls/secret walls in front of you (1 s use) | Digging new paths, triggering cave-ins |
+| **Chalk** | W2 L9 | Mark a tile (max 5) — persists in journal map | Player-made notes; required for one memory puzzle per world |
+| **Decoy Idol** | W3 L5 | Drop it to weigh down a plate or lure an enemy, then pick it back up | Classic plate puzzles, enemy routing |
+
+## World elements (one new sim layer per world)
+| World | Element | Rules |
+|---|---|---|
+| 1 Jade Cenote | **Water** | Water spreads into empty tiles one tile per tick from sources. Crates float and drift with the current. The player can wade 1 deep and drowns at 2 deep after 3 s. Floodgate levers |
+| 2 Qadir | **Sand** | Sand falls like gems but piles at 45°. It flows through grates. Quicksand slows the player to half speed and sinks crates. Mirrors + light beams open sun doors |
+| 3 Hrimfjall | **Ice** | Anything on ice slides until blocked. Freezing braziers turn water into ice bridges. Thin ice breaks after 2 crossings |
+| 4 Ember Forge | **Lava** | Lava flows like slow water (1 tile / 3 ticks). Lava + water → basalt floor. Crates burn. Heat tiles pulse on a rhythm |
+| 5 Meridian Core | **Gears/Time** | Rotating room sections turn 90° when a lever is pulled, and gravity is relative to the room. Some tiles move only on the beat (every 4 ticks). Inside time bubbles, falling objects hang until the bubble pops |
+
+## Enemies
+| Enemy | World | Behaviour | Counter |
+|---|---|---|---|
+| Pit viper | 1+ | Patrols a line, turns at walls | Crush it, or block it with a crate |
+| Cave bat | 1+ | Flies diagonally, ignores walls | Lantern scares it away |
+| Scarab swarm | 2 | Follows your trail 5 tiles behind | Lead it under falling sand |
+| Mummified sentinel | 2 | Wakes when you're in line of sight, then chases (A* on the grid) | Doors, boulders, decoy |
+| Ice wolf | 3 | Slides on ice toward you | Make it slide into spikes or water |
+| Magma slug | 4 | Leaves a lava trail | Water, crushing |
+| Gilded Compass agent | 2–5 | Races you for the exit gems (an NPC "rival run") | Outsmart it: block its route |
+| Clockwork sentry | 5 | Moves only on the beat | Read the rhythm |
+
+## Level beat structure (template)
+1. **Hook room:** see the exit or treasure, but you can't reach it.
+2. **Teach:** a safe room that shows the new mechanic.
+3. **Test:** use it under light pressure.
+4. **Twist:** combine it with an older mechanic.
+5. **Trap/chase:** a timed escape (rolling boulder, flood, collapse).
+6. **Reward:** exit. A secret branch is hidden in step 3 or 4.
+
+## Difficulty & fairness rules
+- Everything that can kill you telegraphs for ≥ 0.4 s, or is visible before it becomes a threat.
+- No "leap of faith" off-screen. The camera always shows the tiles you could move to.
+- No unwinnable state without an obvious signal. When the sim detects that the exit gems can't be reached, a
+  "Rewind or Restart room?" prompt appears.
+- Every level has a solution checked by the solver plus a human-written solution video kept internally.
+
+## Scoring & rewards
+Per level: Gems (x/y) · Sunshards · Relic (if any) · Time vs par · Rewinds used.
+Badges: *Untouched* (no rewind), *Cartographer* (every room seen), *Swift* (under par).
+Stars aren't used. Collectibles drive progress: 60% of gems across a world unlocks its boss.
+
+## Controls
+- **Touch:** swipe-and-hold (default) or a floating virtual stick. Tool button on the right thumb, Hourglass in the top-right.
+- **Keyboard:** WASD/arrows, Space = tool, Q/E = switch tool, R = rewind, Esc = pause.
+- **Gamepad:** stick/D-pad, A = tool, LB/RB = switch, Y = rewind.
+- Input buffer: the last direction pressed within 120 ms of a tick boundary wins.
