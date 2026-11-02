@@ -1,35 +1,41 @@
 ---
 name: relicbound-stack
-description: How to build Relicbound (a pulp-adventure grid action-puzzler, web-first three.js + TypeScript + Capacitor) and how to use the ten third_party libraries in it (pixelfx, meshoptimizer/gltfpack, JoltPhysics.js, Effekseer, Material Maker, FastNoise2, recastnavigation, ozz-animation, Terrain3D, godot_voxel). Use when writing game code, the sim, levels, the asset pipeline or VFX for this project, or when deciding whether one of those libraries fits a task.
+description: How to build Relicbound (a pulp-adventure grid action-puzzler, Android-first, Godot 4 + GDScript, web demo export) and how to use the ten third_party libraries in it (JoltPhysics, recastnavigation, meshoptimizer, pixelfx, Effekseer, Material Maker, FastNoise2, Terrain3D, godot_voxel, ozz-animation). Use when writing game code, the sim, levels, scenes, the asset pipeline, VFX, Android export or CI for this project, or when deciding whether one of those libraries fits a task.
 ---
 
-# Relicbound stack
+# Relicbound stack (Godot 4, Android-first)
 
-Read `docs/06_TECH_STACK.md` (architecture) and `docs/05_GDD_MECHANICS.md` (rules) before you change code.
+Read `docs/06_TECH_STACK.md` (architecture), `docs/05_GDD_MECHANICS.md` (rules) and `docs/08_ROADMAP.md`
+(the current sprint) before you change code. The Godot project root is `game/`.
 
 ## Hard rules
-1. **The sim always resolves the same way and is pure.** `packages/sim` is integer-grid TS with no DOM, no
-   three.js and no Math.random (it uses a seeded RNG in the state). `step(state, intent) -> {state, events}`.
-   Any new rule needs a unit test and must keep the golden replays passing.
-2. **Juice hangs off events.** The renderer, VFX, audio and haptics react to sim events and never change the sim state.
-3. **Physics and navmesh never decide gameplay.** Jolt is cosmetic debris/ragdoll only. Recast is for the hub/cutscene NPCs only.
-4. Budgets: web core ≤ 15 MB, world pack ≤ 25 MB, ≤ 150 draw calls, 60 fps on mid-range Android.
+1. **The sim is pure and always resolves the same way.** `game/sim/` holds `RefCounted` classes and static funcs
+   only: no `Node`, no `get_tree()`, no `randf()`/`randi()` (use the seeded RNG stored in `SimState`), and
+   integers only for positions and timing. `SimStep.step(state, intent) -> StepResult` returns the new state and an events array.
+2. **Every new rule needs a GUT test** in `game/tests/sim/`, and all golden replays must still pass.
+3. **Juice hangs off events.** `VfxRouter`, `AudioRouter`, `Haptics` and `LevelView` react to sim events and never change the sim state.
+4. **Physics and navmesh never decide gameplay.** Jolt is for cosmetic debris/ragdolls only. Navigation (Recast) is for hub/cutscene NPCs only.
+5. **Static typing everywhere** in GDScript (`var hp: int`, `func f(a: Vector2i) -> bool`).
+6. Budgets: 60 fps on mid-range Android, ≤ 120 draw calls, ≤ 400 MB RAM, base `.aab` ≤ 150 MB.
+7. Everything must also run on the **Compatibility** renderer (low-end Android + web demo).
 
 ## Library playbook (sources are in `third_party/`)
 | Need | Use | How |
 |---|---|---|
-| Pixel VFX (dust, sparkle, torch, splash, poof) | pixelfx | Use the `pixelfx` skill. Search with `node third_party/pixelfx/tools/list.mjs <words>`; render and look at `records/.../contact.png`; import `src/core` + effect modules in `packages/vfx`, or bake `--sheet` into `assets/build/fx/` |
-| Compress meshes / LODs | meshoptimizer | `gltfpack -i in.glb -o out.glb -cc -tc` (+ `-si 0.6` for LOD). Load with three.js `GLTFLoader.setMeshoptDecoder(MeshoptDecoder)` |
-| Debris / ragdoll | JoltPhysics.js (`jolt-physics` npm) | Spawn on `BoulderShattered`/`EnemyDefeated` events; off on the Lite tier; bodies are removed after 3 s |
-| Big 3D boss/cinematic VFX | Effekseer | Author `.efkefc` in the Effekseer editor; play via Effekseer for WebGL in `packages/vfx/effekseer.ts` |
-| PBR materials | Material Maker | Keep `.ptex` sources in `assets/src/materials`; export → `toktx --t2 --encode etc1s` → KTX2 |
-| Noise (wear, moss, daily room) | FastNoise2 | Offline in `tools/noise/` (build with emscripten or use baked textures). The runtime only uses seeded baked output |
-| Free-moving NPC paths (hub) | recastnavigation (`recast-navigation` npm) | Never in puzzle levels. Enemies there use grid A* in the sim |
-| Skeletal anim at scale | ozz-animation | Deferred. Use three.js AnimationMixer unless profiling proves otherwise |
-| Terrain / voxels | Terrain3D, godot_voxel | **Godot only.** Don't use them in the web build. They're for the Godot fallback track only |
+| Pixel VFX | pixelfx | Use the `pixelfx` skill. `node third_party/pixelfx/tools/list.mjs <words>` → render, look at the contact sheet → `--sheet` → copy the PNG+JSON to `game/assets/fx/` → `AnimatedSprite3D` billboard, nearest filter, fps from `meta.pixelfx.fps`, offset from the pivot |
+| Debris / ragdoll | Jolt (built in) | `RigidBody3D` chunks spawned by `VfxRouter` on `BoulderShattered`/`EnemyDefeated`; freed after 3 s; disabled on the Lite tier |
+| Hub NPC walking | Recast (built in) | `NavigationRegion3D` + `NavigationAgent3D`. Never used in puzzle levels (those use grid A* in `sim/`) |
+| Mesh LOD / optimisation | meshoptimizer (built into the importer) | Leave "Generate LODs" on in the import settings; optionally pre-run `gltfpack -si 0.6` |
+| Big 3D VFX | Effekseer | `addons/effekseer`; author `.efkefc` in `assets_src/effekseer/`; play via an `EffekseerEmitter3D` node in `vfx/` |
+| PBR materials | Material Maker | Sources in `assets_src/materials/*.ptex`; export to `game/assets/materials/` |
+| Noise | FastNoise2 / FastNoiseLite | `FastNoiseLite` for simple runtime noise; FastNoise2 (via godot_voxel) or baked textures for heavier work. Always seeded |
+| Outdoor vistas / hub terrain | Terrain3D | `addons/terrain_3d`. Never in puzzle levels |
+| Destructible backdrop | godot_voxel | Optional (only if the Week-1 spike passed). Never in puzzle rules |
+| Character animation | AnimationTree | ozz-animation isn't used |
 
-## Commands (once scaffolded)
-- `pnpm dev`: the game at localhost
-- `pnpm test`: sim unit tests + golden replays
-- `pnpm levels:check`: solver check on every level
-- `pnpm assets`: run the gltfpack/KTX2/pixelfx bake pipeline
+## Commands
+- Run tests: `godot --headless --path game -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`
+- Export Android debug: `godot --headless --path game --export-debug "Android" ../build/relicbound.apk`
+- Export Play bundle: `godot --headless --path game --export-release "Android AAB" ../build/relicbound.aab`
+- Export web demo: `godot --headless --path game --export-release "Web" ../build/web/index.html`
+- Install on a phone: `adb install -r build/relicbound.apk`

@@ -9,7 +9,7 @@ GO games) or built around energy systems and paid boosts.
 ## 2. Goals
 - G1: A 5-minute level should feel like a scene from an adventure film: explore, a puzzle, a trap, an escape.
 - G2: Every death is readable and fair, because the simulation always behaves the same way.
-- G3: Instant play in the browser (first level within 10 s on 4G). The same build ships to the iOS and Android stores.
+- G3: A polished native Android app (then iOS): cold start to first level in ≤ 8 s on a mid-range phone, full offline play.
 - G4: Discovery is rewarded: secrets, lore and a journal that fills in as you play.
 
 ## 3. Non-goals (v1.0)
@@ -48,8 +48,8 @@ Multiplayer · user-made levels (v1.5) · open world · free-form physics puzzle
 ### Platform & meta
 | ID | Story | Priority | Acceptance criteria |
 |---|---|---|---|
-| PM-1 | I play instantly on the web | P0 | Initial download ≤ 15 MB; level 1 playable in ≤ 10 s on 4G (Lighthouse "Slow 4G" profile) |
-| PM-2 | I install it as an app | P0 | PWA install with offline play for the worlds I've downloaded; Capacitor builds for iOS and Android |
+| PM-1 | I install it from Google Play and play offline | P0 | Base `.aab` ≤ 150 MB; cold start to level 1 ≤ 8 s on the reference phone; no network needed after install |
+| PM-2 | I can try a demo in my browser | P2 | World 1 web demo (Compatibility renderer) ≤ 40 MB; ends with a "Get it on Google Play" button |
 | PM-3 | My progress syncs | P1 | Local save is the source of truth; optional account sync; conflicts resolve by most progress |
 | PM-4 | I buy the full game once | P0 | Native IAP on the stores; Stripe or a portal SDK on the web; restore purchase works |
 | PM-5 | I control it my way | P0 | Touch: swipe or virtual stick (setting); keyboard; gamepad. Every control can be remapped |
@@ -68,8 +68,8 @@ Multiplayer · user-made levels (v1.5) · open world · free-form physics puzzle
 | Area | Requirement |
 |---|---|
 | Performance | 60 fps on Snapdragon 7-series / iPhone 11; 30 fps "Lite" tier; ≤ 150 draw calls per frame |
-| Memory | ≤ 350 MB on mobile browsers |
-| Size | Web core ≤ 15 MB; each world pack ≤ 25 MB (meshoptimizer + KTX2 textures) |
+| Memory | ≤ 400 MB RAM on Android |
+| Size | Base `.aab` ≤ 150 MB; extra worlds via Play Asset Delivery if needed; web demo ≤ 40 MB |
 | Load | Switching worlds ≤ 3 s once cached |
 | Reliability | Crash-free sessions ≥ 99.5% |
 | Determinism | The same inputs give the same state hash on every platform (CI replay test) |

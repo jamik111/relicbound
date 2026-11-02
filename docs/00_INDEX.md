@@ -6,6 +6,6 @@
 | 03 | [PRD](03_PRD.md) | User stories, acceptance criteria, non-functional requirements |
 | 04 | [Story & World](04_STORY_AND_WORLD.md) | Characters, plot, 5 worlds, journal |
 | 05 | [Mechanics (GDD)](05_GDD_MECHANICS.md) | Sim rules, tiles, tools, elements, enemies |
-| 06 | [Tech Stack (ADR-001)](06_TECH_STACK.md) | Web-first stack, how each library fits, architecture |
+| 06 | [Tech Stack (ADR-002)](06_TECH_STACK.md) | Android-first Godot 4 stack, how each library fits, architecture |
 | 07 | [Art & Audio](07_ART_AUDIO_DIRECTION.md) | Visual pillars, palettes, asset specs, VFX list |
-| 08 | [Roadmap](08_ROADMAP.md) | Phases, gates, first two weeks |
+| 08 | [Build Roadmap](08_ROADMAP.md) | Setup checklist, sprint-by-sprint tasks, gates, how we work |

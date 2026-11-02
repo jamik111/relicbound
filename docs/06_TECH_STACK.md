@@ -1,81 +1,109 @@
-# 06 — Technology Stack & Architecture (ADR-001)
+# 06 — Technology Stack & Architecture (ADR-002)
+**Supersedes ADR-001 (web-first three.js).** · Date: 2026-11-02 · Status: Accepted
 
 ## Decision
-**Web-first TypeScript game built on three.js. It ships as a PWA and is wrapped with Capacitor for the iOS and
-Android stores.** The rules run as a plain-data grid simulation that always resolves the same way. The
-renderer and VFX only draw it.
+**An Android-first native game built in Godot 4 (GDScript).** It ships to Google Play first, then the iOS App
+Store. A small **web demo** of World 1 is exported from the same project for marketing.
 
-### Why web-first and not Godot
-| Option | Pros | Cons | Verdict |
-|---|---|---|---|
-| **TS + three.js + Vite + Capacitor** | ~2–6 MB engine, link-to-play in seconds, one codebase for web, iOS and Android, pixelfx is native JS, huge ecosystem | We write more engine glue ourselves | ✅ **Chosen** (the brief prefers a web app) |
-| Godot 4 (GDScript) | Great editor; Jolt is built into Godot 4.4+; Terrain3D, godot_voxel and Effekseer plugins | Web export is ~30–40 MB wasm with slow first load on phones; GDExtensions/modules (Terrain3D, voxel) are hard or impossible on web | Keep as **fallback track** if we go native-first |
-| Unity | Mature mobile | Licence and runtime fees; heavy web builds | ❌ |
+The rules run as a pure grid simulation that always resolves the same way. The scenes, renderer, VFX and audio
+only draw it and react to its events.
 
-## Stack
-| Layer | Choice |
+### Why
+| Factor | Android app (chosen) | Web app |
+|---|---|---|
+| Audience | The genre's fans played on phones. Android is most phones in our target regions | Mostly desktop and casual portal players |
+| Revenue | Google Play Billing; players are used to paying once | Weak unless a portal takes a revenue share |
+| Discovery | Store search, charts, featuring | We have to bring every player ourselves |
+| Performance | Full GPU and memory → 2.5D lighting, debris, big VFX | Browser memory caps, throttling, audio quirks |
+| Offline / feel | Full offline, haptics, gamepad, true fullscreen | Partial |
+
+### Why Godot (and not three.js or Unity)
+| Option | Verdict |
 |---|---|
-| Language / build | TypeScript (strict), Vite, pnpm, Vitest, Playwright e2e |
-| Rendering | three.js (WebGL2; WebGPU renderer as opt-in once stable on mobile) |
-| Sim | Our own `@relic/sim` package: pure TS, integer grid, fixed tick, no DOM |
-| UI | Lightweight DOM/CSS overlay (Preact or Solid) for menus and journal; in-canvas HUD |
-| Audio | Howler.js (or WebAudio directly); adaptive music stems |
-| Storage | IndexedDB (idb-keyval); optional cloud sync via a small serverless API |
-| Native shell | Capacitor (iOS/Android): IAP via a native plugin, haptics, status bar |
-| Hosting | Static CDN (Cloudflare Pages / Netlify); world packs as separate cached bundles |
-| Analytics | PostHog or a self-hosted equivalent; consent gate |
+| **Godot 4** | ✅ Free (MIT); one-click Android/iOS/Web export; Jolt and Recast built in; 9 of our 10 libraries plug in |
+| three.js + Capacitor | ❌ Good for web-first, but Terrain3D and godot_voxel can't be used, and every native library becomes a WASM port |
+| Unity | ❌ Licence/runtime fees, heavier builds, less control |
 
-## How the 10 requested libraries fit
-They're in `third_party/`. Several are C++ or Godot-only, so this table is honest about where each one is used.
+## Engine settings
+| Setting | Value |
+|---|---|
+| Engine | Latest stable **Godot 4.x** (≥ 4.4 for built-in Jolt). Pin the exact version in `project.godot` and CI |
+| Language | **GDScript** with static types everywhere (`var x: int`). (C# can't export to the web, and we want the demo) |
+| Renderer | **Mobile** renderer (Vulkan) by default; **Compatibility** (OpenGL ES 3) for low-end Android and the web demo |
+| Physics | 3D physics engine = **Jolt** (cosmetic only, see rules) |
+| Min Android | API 24 (Android 7.0), arm64-v8a + armeabi-v7a; target the latest API that Play requires |
+| Packaging | Android App Bundle (`.aab`) for Play; Play Asset Delivery for world packs if the bundle exceeds 150 MB |
+| Tests | **GUT** (Godot Unit Test) for headless unit tests |
+| CI | GitHub Actions + headless Godot: run tests, check levels, export the `.aab`/`.apk` and the web demo |
 
-| Library | Role in Relicbound | How it gets into a web build | Status |
+## How the 10 libraries fit
+| Library | Role in Relicbound | How it gets into Godot | Status |
 |---|---|---|---|
-| **pixelfx** (patch-gg) | 2D pixel VFX: gem sparkles, dust puffs, torches, impacts, UI juice. Its **Claude skill is installed** | Native JS: import `src/core` + effects directly, or bake sprite sheets that we draw on camera-facing quads | ✅ Core |
-| **meshoptimizer** (zeux) | Compress every glTF tile/character (`gltfpack -cc -tc`), LODs, vertex cache optimisation | `gltfpack` CLI in the asset pipeline; three.js has `MeshoptDecoder` built in | ✅ Core (pipeline) |
-| **JoltPhysics** (jrouwe) | **Cosmetic only**: boulder-smash debris, crumbling walls, ragdolls for defeated enemies. Never game rules | `jolt-physics` npm (JoltPhysics.js, the official wasm port) | ✅ Polish tier (off on the Lite tier) |
-| **Effekseer** | Big 3D VFX moments: boss attacks, Sunstone reveals, lava eruptions. Authored in the Effekseer editor | Effekseer for WebGL runtime (three.js integration); the editor from this repo is used for authoring | ✅ Boss/cinematic VFX |
-| **Material Maker** (RodZill4) | Procedural PBR materials (stone, jade, sandstone, ice, basalt, brass) exported as textures, then KTX2 | Offline authoring tool → PNG → `toktx`/basisu → KTX2 | ✅ Art pipeline |
-| **FastNoise2** (Auburn) | Procedural variety: tile wear and moss placement, background cave walls, daily-challenge room layouts | Offline Node tool via its C API/emscripten build, **or** baked noise textures; the runtime uses seeded output | ✅ Tools + daily room |
-| **recastnavigation** | Navmesh for free-moving NPCs in the **hub camp / cutscenes** (gameplay enemies use grid A*) | `recast-navigation` npm (recast-navigation-js wasm port) | ⚪ Optional (hub only) |
-| **ozz-animation** | High-performance skeletal animation and blending | three.js `AnimationMixer` covers v1. Compile ozz to wasm only if profiling shows the skinning CPU cost with many enemies on screen | ⚪ Deferred |
-| **Terrain3D** (Tokisan) | Heightmap terrain | **Godot-only GDExtension, not usable in three.js.** Used only if we take the Godot fallback track (e.g. a large overworld) | ⛔ Godot track |
-| **godot_voxel** (Zylann) | Voxel/destructible terrain | **Godot C++ module, not usable in three.js.** Godot track only | ⛔ Godot track |
+| **JoltPhysics** | Cosmetic only: boulder-smash debris, wall crumbles, enemy ragdolls. **Never game rules** | Built into Godot 4.4+ (Project Settings → Physics → 3D → Jolt Physics) | ✅ Core polish |
+| **recastnavigation** | Free-walking NPCs in the hub camp and cutscenes. Puzzle enemies use grid A* in the sim | Built into Godot (`NavigationRegion3D` / `NavigationAgent3D` use Recast) | ✅ Hub only |
+| **meshoptimizer** | LODs and vertex optimisation at import | Built into Godot's mesh importer (auto LOD). The `gltfpack` CLI is optional for pre-optimising | ✅ Pipeline |
+| **pixelfx** | 2D pixel VFX: dust, sparkles, torches, splashes, poofs, UI juice | `node tools/render.mjs <id> --sheet` → PNG + JSON → `AnimatedSprite3D` (billboard, nearest filter). The skill is installed | ✅ Core |
+| **Effekseer** | Big 3D VFX: boss attacks, Sunstone reveals, eruptions | **Effekseer for Godot 4** plugin in `addons/effekseer`; author in the Effekseer editor | ✅ Boss/cinematic |
+| **Material Maker** | Procedural PBR materials (jade, sandstone, ice, basalt, brass) | Built with Godot; export Godot materials/textures → `assets/materials/` | ✅ Art pipeline |
+| **FastNoise2** | Tile wear and moss scatter, background cave walls, daily-room seeds | Through godot_voxel's `FastNoise2` resource, or baked offline to textures. Godot's built-in `FastNoiseLite` covers simple cases | ✅ Tools/variety |
+| **Terrain3D** | Outdoor scenes: world map/flight hub, jungle and desert approach vistas in cutscenes | GDExtension in `addons/terrain_3d`. **Puzzle levels don't use it** | ⚪ Hub/cutscenes. Mobile support confirmed in the Week-1 spike |
+| **godot_voxel** | Destructible backdrop rock for chase/collapse levels; cave-in sequences | GDExtension build (or a custom engine build with the module) | ⚪ Optional. Decided by the spike; skip it if it costs > 3 MB or 2 ms/frame |
+| **ozz-animation** | Not needed | Godot's `AnimationTree` / `AnimationPlayer` cover blending and skinning | ⛔ Not used (kept as reference) |
 
-> Note: the core puzzle doesn't need a physics engine or navmesh. Keeping Jolt and Recast out of the rules is
-> deliberate: rules that always resolve the same way are what make rewind, replays and fair deaths possible.
+> Puzzle levels are made from **grid tiles** (`GridMap` / `MultiMeshInstance3D`), not terrain or voxels. Terrain3D
+> and godot_voxel are for scenery around the puzzles, so they're optional and can be cut without hurting the game.
 
 ## Architecture
 ```
 relicbound/
-├─ apps/
-│  ├─ game/            # Vite app: boot, scenes, renderer, input, UI, audio
-│  └─ editor/          # Internal level editor (same renderer + sim)
-├─ packages/
-│  ├─ sim/             # Pure TS grid simulation (no three.js), 100% unit tested
-│  ├─ levels/          # Level JSON + schema + solver
-│  ├─ render/          # three.js scene graph, tile instancing, lights, interpolation
-│  ├─ vfx/             # pixelfx bridge + Effekseer bridge + Jolt debris
-│  └─ platform/        # save, IAP, analytics, haptics (web vs Capacitor adapters)
-├─ assets/
-│  ├─ src/             # .blend, Material Maker .ptex, Effekseer .efkefc, audio stems
-│  └─ build/           # gltfpack'd .glb, KTX2, sprite sheets (generated, git-ignored)
-├─ tools/              # asset pipeline scripts (gltfpack, toktx, pixelfx render, noise bake)
-├─ third_party/        # the 10 cloned repos (reference + tooling)
+├─ game/                         # Godot project root (project.godot)
+│  ├─ sim/                       # PURE rules: no Node, no scene, no randf()
+│  │  ├─ sim_state.gd            #   RefCounted: grid (PackedInt32Array), objects, rng seed, tick
+│  │  ├─ sim_step.gd             #   static func step(state, intent) -> StepResult {state, events}
+│  │  ├─ rules/                  #   gravity.gd, push.gd, water.gd, sand.gd, ice.gd, lava.gd, gears.gd
+│  │  └─ events.gd               #   BoulderLanded, GemCollected, PlayerCrushed, ...
+│  ├─ levels/                    # level .json + schema + solver.gd
+│  ├─ scenes/                    # boot, main_menu, level, hub, journal, cutscenes
+│  ├─ view/                      # LevelView: GridMap/MultiMesh sync, tick interpolation, camera
+│  ├─ actors/                    # Nadia, enemies, boss visual scenes (AnimationTree)
+│  ├─ vfx/                       # event→VFX router: pixelfx sprites, Effekseer, Jolt debris
+│  ├─ audio/                     # event→SFX, adaptive music bus
+│  ├─ ui/                        # HUD, touch controls, menus, journal (Control nodes)
+│  ├─ platform/                  # save, billing, analytics, haptics (Android/iOS/Web adapters)
+│  ├─ autoload/                  # Game.gd, Settings.gd, Save.gd, Events.gd (singletons)
+│  ├─ addons/                    # gut, effekseer, terrain_3d, (voxel)
+│  ├─ assets/                    # imported .glb, textures, sprite sheets, audio
+│  └─ tests/                     # GUT tests + golden replays
+├─ assets_src/                   # .blend, Material Maker .ptex, Effekseer .efkefc, audio stems
+├─ tools/                        # pixelfx bake, level linter, noise bake scripts
+├─ third_party/                  # the 10 cloned repos (reference/tooling; git-ignored)
 └─ docs/
 ```
 
-**Data flow per frame:** `Input → (on each tick) sim.step(state, intent) → events[] → render.sync(state, alpha)`
-and `vfx.play(events)` / `audio.play(events)`. The sim emits **events** (`BoulderLanded`, `GemCollected`,
-`PlayerCrushed`…), and every bit of juice hangs off those events. That keeps the sim free of rendering code.
+**Flow per frame:** `TouchInput → Game (fixed 10 Hz tick) → SimStep.step(state, intent) → events[]` →
+`LevelView.sync(state, alpha)` + `VfxRouter.play(events)` + `AudioRouter.play(events)` + `Haptics`.
+The sim never touches a Node. Nodes never change the sim state.
 
-## Rendering plan (mobile-friendly)
-- Tiles are `InstancedMesh` per tile type, so one draw call each. Rooms outside the view are culled.
-- Lighting: 1 directional + up to 8 clustered point lights (torches), baked AO in the vertex colour.
-- Post-processing (High tier only): tilt-shift DOF, bloom, colour grading LUT per world.
-- Quality tiers: **Lite** (no post, no Jolt, half resolution) · **Standard** · **High**, auto-detected from a benchmark that runs on first boot.
-- The pixel VFX render at 1/3 resolution on an overlay canvas texture and are upscaled with nearest-neighbour. This gives the "HD-2D" look: crisp pixel effects over a smooth 3D world.
+## Mobile rendering plan
+- Each tile type is one `MultiMeshInstance3D` (or `GridMap` with a MeshLibrary), so one draw call each.
+  Rooms outside the camera are hidden.
+- Orthographic `Camera3D` tilted to 35°. Point lights for torches (≤ 8 visible), baked AO in vertex colour.
+- Quality tiers: **Lite** (Compatibility renderer, no Jolt debris, 0.75 render scale) · **Standard** ·
+  **High** (glow, tilt-shift DOF, colour LUT). Picked automatically from a benchmark on first boot.
+- Pixel VFX are `AnimatedSprite3D` billboards with nearest filtering. This gives the "HD-2D" mix of crisp pixel
+  effects over a smooth 3D world.
+- Budgets: 60 fps on mid-range Android (Snapdragon 7-series), ≤ 120 draw calls, ≤ 400 MB RAM, base `.aab` ≤ 150 MB.
+
+## Platform services
+| Need | Android | iOS (later) | Web demo |
+|---|---|---|---|
+| Purchase | Godot Google Play Billing plugin | StoreKit plugin | "Get it on Google Play" link |
+| Save | `user://` + optional Play Games cloud save | `user://` + iCloud | `user://` (IndexedDB) |
+| Analytics | GameAnalytics or a self-hosted PostHog endpoint (privacy-first, consent in the EU) | same | same |
+| Haptics | `Input.vibrate_handheld()` | same | none |
 
 ## Testing
-- Sim: unit tests per rule, plus **golden replays** (recorded inputs → expected state hash).
-- Levels: solver CI job ensures every level is solvable and the gem quota is reachable.
-- E2E: Playwright boots the game in mobile emulation, plays the tutorial replay and checks the frame time budget.
+- **Sim unit tests (GUT, headless):** one test per rule edge case.
+- **Golden replays:** recorded inputs → expected state hash. They must match on every run and in CI.
+- **Level solver:** a CI job proves every level is solvable and its gem quota reachable.
+- **Device tests:** a weekly build on 3 reference phones (low, mid, high) with a frame-time log.
