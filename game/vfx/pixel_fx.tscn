@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://vfx/pixel_fx.gd" id="1_pfx"]
+
+[node name="PixelFx" type="AnimatedSprite3D"]
+billboard = 1
+shaded = false
+texture_filter = 0
+script = ExtResource("1_pfx")

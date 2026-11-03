@@ -1,0 +1,9 @@
+# pixelfx effects baked into game/assets/fx/<name>/sheet.png + sheet.json by tools/bake_fx.ps1 / bake_fx.sh.
+# This file is the "source" of every pixelfx asset (docs/09_ART_PIPELINE.md §7).
+# Format: <name> <pixelfx id> [render.mjs flags]   (JSON in --opts must not contain spaces)
+# Limits: <= 48 frames, sheet <= 2048x2048 (lower --fps to cut frames on long loops).
+# Grey-box placeholders (Sprints 0-2): recolour/refine per world after Gate B.
+
+dust     impacts/blunt-hit      --opts {"palette":["#1c1610","#33281c","#4f3f2c","#6e5a40","#927a58","#b89f78","#dcc8a2"]}
+sparkle  pickups/collect-burst  --opts {"palette":["#1e1206","#4a2c08","#86520c","#c48412","#f0b424","#ffe066","#fff6c4","#ffffff"]}
+torch    fire/torch             --fps 20

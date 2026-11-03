@@ -1,7 +1,8 @@
 extends Node3D
 ## Sprint 0 task 0.6: mobile performance spike (Gate A).
 ## A 32x24 tile room drawn with MultiMesh, 8 flickering torch lights, a tilted ortho camera,
-## 20 Jolt debris bodies that keep respawning, and 10 billboard pixel sprites.
+## 20 Jolt debris bodies that keep respawning, and pixelfx sprites: 8 looping torches plus
+## dust/sparkle one-shots popping continuously (10+ on screen at once).
 ## After SAMPLE_SECONDS it prints avg fps / 1% low / draw calls (visible in `adb logcat -s godot`).
 ## Throwaway spike code: not a template for the real LevelView.
 
@@ -9,30 +10,31 @@ const ROOM_W: int = 32
 const ROOM_H: int = 24
 const TORCH_COUNT: int = 8
 const DEBRIS_COUNT: int = 20
-const SPRITE_COUNT: int = 10
 const WARMUP_SECONDS: float = 3.0
 const SAMPLE_SECONDS: float = 30.0
-## Placeholder until the pixelfx sheets are baked (task 0.9). Matches the art pipeline's 1/48 tile per VFX pixel.
-const VFX_PIXEL_SIZE: float = 1.0 / 48.0
-const SPRITE_FRAMES: int = 8
-const SPRITE_FRAME_PX: int = 32
+## Seconds between dust/sparkle one-shots (each lives ~1 s, so ~4 alive alongside the torches).
+const BURST_INTERVAL: float = 0.25
 
 var _rng := RandomNumberGenerator.new()
 var _torches: Array[OmniLight3D] = []
 var _debris: Array[RigidBody3D] = []
 var _stats: Label
 var _elapsed: float = 0.0
+var _burst_timer: float = 0.0
+var _burst_count: int = 0
 var _frame_times: PackedFloat32Array = PackedFloat32Array()
 var _reported: bool = false
 
 
 func _ready() -> void:
 	_rng.seed = 1936
+	# Parse sheets up front so the first burst doesn't hitch.
+	for fx_name: String in ["torch", "dust", "sparkle"]:
+		PixelFx.load_sheet(fx_name)
 	_build_environment()
 	_build_room()
 	_build_torches()
 	_build_debris()
-	_build_sprites()
 	_build_camera()
 	_build_overlay()
 
@@ -45,6 +47,11 @@ func _process(delta: float) -> void:
 	for body: RigidBody3D in _debris:
 		if body.position.y < -2.0 or body.sleeping:
 			_respawn_debris(body)
+	_burst_timer += delta
+	while _burst_timer >= BURST_INTERVAL:
+		_burst_timer -= BURST_INTERVAL
+		_spawn_burst()
+	_maybe_screenshot()
 	if _elapsed > WARMUP_SECONDS and not _reported:
 		_frame_times.append(delta)
 		if _elapsed > WARMUP_SECONDS + SAMPLE_SECONDS:
@@ -126,6 +133,7 @@ func _build_torches() -> void:
 		light.shadow_enabled = false
 		add_child(light)
 		_torches.append(light)
+		PixelFx.spawn(self, "torch", Vector3(light.position.x, 0.0, light.position.z))
 
 
 func _build_debris() -> void:
@@ -156,45 +164,17 @@ func _respawn_debris(body: RigidBody3D) -> void:
 	body.sleeping = false
 
 
-func _build_sprites() -> void:
-	var frames := _placeholder_frames()
-	for i: int in SPRITE_COUNT:
-		var sprite := AnimatedSprite3D.new()
-		sprite.sprite_frames = frames
-		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-		sprite.shaded = false
-		sprite.pixel_size = VFX_PIXEL_SIZE
-		sprite.position = Vector3(3.0 + i * 2.8, 0.6, 4.0 + (i % 3) * 7.0)
-		sprite.frame = i % SPRITE_FRAMES
-		add_child(sprite)
-		sprite.play("default")
-
-
-## Procedural sparkle frames so the spike runs before pixelfx is baked in (0.9 swaps these out).
-func _placeholder_frames() -> SpriteFrames:
-	var frames := SpriteFrames.new()
-	frames.set_animation_speed("default", 12.0)
-	frames.set_animation_loop("default", true)
-	var s: int = SPRITE_FRAME_PX
-	for f: int in SPRITE_FRAMES:
-		var img := Image.create_empty(s, s, false, Image.FORMAT_RGBA8)
-		var c: int = s / 2
-		var r: int = mini(3 + f * 2, c - 1)
-		for k: int in range(-r, r + 1):
-			var a: float = 1.0 - absf(k) / float(r + 1)
-			var col := Color(1.0, 0.85, 0.4, a)
-			img.set_pixel(c + k, c, col)
-			img.set_pixel(c, c + k, col)
-		img.set_pixel(c, c, Color.WHITE)
-		frames.add_frame("default", ImageTexture.create_from_image(img))
-	return frames
+func _spawn_burst() -> void:
+	_burst_count += 1
+	var fx_name: String = "sparkle" if _burst_count % 2 == 0 else "dust"
+	var pos := Vector3(_rng.randi_range(2, ROOM_W - 3), 0.0, _rng.randi_range(2, ROOM_H - 3))
+	PixelFx.spawn(self, fx_name, pos)
 
 
 func _build_camera() -> void:
 	var cam := Camera3D.new()
 	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.size = 16.0
+	cam.size = 22.0
 	var target := Vector3(ROOM_W / 2.0, 0.0, ROOM_H / 2.0)
 	var pitch: float = deg_to_rad(35.0)
 	cam.position = target + Vector3(0.0, sin(pitch), cos(pitch)) * 30.0
@@ -212,6 +192,15 @@ func _build_overlay() -> void:
 
 
 # --- Measurement ------------------------------------------------------------
+
+## `-- --screenshot=<path>` saves one frame after the warm-up (for checking the look without a device).
+func _maybe_screenshot() -> void:
+	if _elapsed < WARMUP_SECONDS or has_meta(&"shot_taken"):
+		return
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--screenshot="):
+			set_meta(&"shot_taken", true)
+			get_viewport().get_texture().get_image().save_png(arg.trim_prefix("--screenshot="))
 
 func _update_overlay() -> void:
 	_stats.text = "FPS %d  |  %.2f ms\ndraw calls %d  |  objects %d\n%s  |  %s" % [
