@@ -43,12 +43,26 @@ only draw it and react to its events.
 | **recastnavigation** | Free-walking NPCs in the hub camp and cutscenes. Puzzle enemies use grid A* in the sim | Built into Godot (`NavigationRegion3D` / `NavigationAgent3D` use Recast) | ✅ Hub only |
 | **meshoptimizer** | LODs and vertex optimisation at import | Built into Godot's mesh importer (auto LOD). The `gltfpack` CLI is optional for pre-optimising | ✅ Pipeline |
 | **pixelfx** | 2D pixel VFX: dust, sparkles, torches, splashes, poofs, UI juice | `node tools/render.mjs <id> --sheet` → PNG + JSON → `AnimatedSprite3D` (billboard, nearest filter). The skill is installed | ✅ Core |
-| **Effekseer** | Big 3D VFX: boss attacks, Sunstone reveals, eruptions | **Effekseer for Godot 4** plugin in `addons/effekseer`; author in the Effekseer editor | ✅ Boss/cinematic |
+| **Effekseer** | Big 3D VFX: boss attacks, Sunstone reveals, eruptions | **Effekseer for Godot 4** plugin in `addons/effekseer`; author in the Effekseer editor | ✅ Boss/cinematic. **No GPU-particle nodes** (they fail on Compatibility); see spike results |
 | **Material Maker** | Procedural PBR materials (jade, sandstone, ice, basalt, brass) | Built with Godot; export Godot materials/textures → `assets/materials/` | ✅ Art pipeline |
-| **FastNoise2** | Tile wear and moss scatter, background cave walls, daily-room seeds | Through godot_voxel's `FastNoise2` resource, or baked offline to textures. Godot's built-in `FastNoiseLite` covers simple cases | ✅ Tools/variety |
-| **Terrain3D** | Outdoor scenes: world map/flight hub, jungle and desert approach vistas in cutscenes | GDExtension in `addons/terrain_3d`. **Puzzle levels don't use it** | ⚪ Hub/cutscenes. Mobile support confirmed in the Week-1 spike |
-| **godot_voxel** | Destructible backdrop rock for chase/collapse levels; cave-in sequences | GDExtension build (or a custom engine build with the module) | ⚪ Optional. Decided by the spike; skip it if it costs > 3 MB or 2 ms/frame |
+| **FastNoise2** | Tile wear and moss scatter, background cave walls, daily-room seeds | Baked offline to textures by a tool (godot_voxel, its runtime route, was dropped). Godot's built-in `FastNoiseLite` covers runtime cases | ✅ Tools/variety |
+| **Terrain3D** | Outdoor scenes: world map/flight hub, jungle and desert approach vistas in cutscenes | GDExtension in `addons/terrain_3d`. **Puzzle levels don't use it** | ✅ Hub/cutscenes. Passed the Sprint 0 spike (device check pending) |
+| **godot_voxel** | ~~Destructible backdrop rock for chase/collapse levels; cave-in sequences~~ | — | ⛔ **Dropped** in the Sprint 0 spike (7 MB > 3 MB rule, no armv7 build). Use pre-fractured meshes + Jolt debris for cave-ins |
 | **ozz-animation** | Not needed | Godot's `AnimationTree` / `AnimationPlayer` cover blending and skinning | ⛔ Not used (kept as reference) |
+
+### Sprint 0 plugin spike results (2026-11-03, Godot 4.7.2)
+Each plugin went into a throwaway project with a tiny scene. It was run on desktop with both renderers and exported as an
+arm64 release APK. Size is the APK growth over an empty project (25.8 MB). Desktop frame times aren't meaningful, so
+the per-frame cost is measured on the reference phone.
+
+| Plugin (version) | Android libs | APK size added | Mobile | Compatibility | Verdict |
+|---|---|---|---|---|---|
+| Effekseer for Godot 4 (1.80.7) | arm64, armv7, x86 | +3.4 MB per ABI | ✅ | ⚠️ Normal effects OK; **GPU-particle effects fail** (shader needs GLSL > ES 3.0) | **Keep** for bosses/cinematics. Author without GPU-particle nodes. Install it in Sprint 5 |
+| Terrain3D (1.1.0) | arm64, armv7 | +2.9 MB per ABI | ✅ | ✅ | **Keep** for the hub/vistas. A headless export logs a harmless `get_version` script error from its disabled export hook |
+| godot_voxel (1.7x GDExtension) | arm64, x86_64 only | +7.2 MB | ✅ | ✅ | **Drop**: fails the ≤ 3 MB rule, and no armv7 build for low-end phones |
+
+Device check still to do: `build/spike_efk.apk` and `build/spike_t3d.apk` (debug-signed) on the reference phone, both
+renderers. The verdict changes only if one crashes or drops below 60 fps.
 
 > Puzzle levels are made from **grid tiles** (`GridMap` / `MultiMeshInstance3D`), not terrain or voxels. Terrain3D
 > and godot_voxel are for scenery around the puzzles, so they're optional and can be cut without hurting the game.

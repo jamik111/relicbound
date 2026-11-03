@@ -31,11 +31,11 @@ For any art, UI or VFX work, also read and follow `docs/09_ART_PIPELINE.md`.
 | Debris / ragdoll | Jolt (built in) | `RigidBody3D` chunks spawned by `VfxRouter` on `BoulderShattered`/`EnemyDefeated`; freed after 3 s; disabled on the Lite tier |
 | Hub NPC walking | Recast (built in) | `NavigationRegion3D` + `NavigationAgent3D`. Never used in puzzle levels (those use grid A* in `sim/`) |
 | Mesh LOD / optimisation | meshoptimizer (built into the importer) | Leave "Generate LODs" on in the import settings; optionally pre-run `gltfpack -si 0.6` |
-| Big 3D VFX | Effekseer | `addons/effekseer`; author `.efkefc` in `assets_src/effekseer/`; play via an `EffekseerEmitter3D` node in `vfx/` |
+| Big 3D VFX | Effekseer | `addons/effekseer` (installed in Sprint 5); author `.efkefc` in `assets_src/effekseer/`; play via an `EffekseerEmitter3D` node in `vfx/`. **No GPU-particle nodes**: they fail on the Compatibility renderer |
 | PBR materials | Material Maker | Sources in `assets_src/materials/*.ptex`; export to `game/assets/materials/` |
-| Noise | FastNoise2 / FastNoiseLite | `FastNoiseLite` for simple runtime noise; FastNoise2 (via godot_voxel) or baked textures for heavier work. Always seeded |
+| Noise | FastNoise2 / FastNoiseLite | `FastNoiseLite` for simple runtime noise; FastNoise2 only offline, baked to textures by a tool, for heavier work. Always seeded |
 | Outdoor vistas / hub terrain | Terrain3D | `addons/terrain_3d`. Never in puzzle levels |
-| Destructible backdrop | godot_voxel | Optional (only if the Week-1 spike passed). Never in puzzle rules |
+| Destructible backdrop | Pre-fractured meshes + Jolt debris | godot_voxel was **dropped** in the Sprint 0 spike (7 MB, no armv7). Don't add it back without re-running the spike |
 | Character animation | AnimationTree | ozz-animation isn't used |
 
 ## Commands
