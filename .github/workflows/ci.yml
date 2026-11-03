@@ -12,13 +12,13 @@ env:
 jobs:
   test:
     name: GUT tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache Godot editor
         id: cache-godot
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/godot
           key: godot-editor-${{ env.GODOT_RELEASE }}
@@ -41,18 +41,18 @@ jobs:
   export:
     name: Export Android debug APK + Web
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Cache Godot editor + export templates
         id: cache-godot
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/godot
@@ -103,12 +103,12 @@ jobs:
           ~/godot/godot --headless --path game --export-release "Web" ../build/web/index.html
           test -f build/web/index.wasm
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: relicbound-debug-apk
           path: build/relicbound.apk
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: relicbound-web
           path: build/web/
