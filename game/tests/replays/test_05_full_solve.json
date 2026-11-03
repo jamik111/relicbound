@@ -1,0 +1,12 @@
+{
+	"level": "res://levels/test/test_05_keys_doors.json",
+	"note": "Gem falls into its pit and is collected, boulder drops, crate pushed, dirt dug, red key, red door, second gem opens the exit.",
+	"inputs": "DDD UU R U RRRRR DDD LLL RRRR",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 2,
+		"tick": 22
+	},
+	"hash": "119b7542836d6e23cedbaa9f8c3c5f782b54f4f230eb632e5709f92b40091b92"
+}

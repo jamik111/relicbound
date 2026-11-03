@@ -72,11 +72,14 @@ renderers. The verdict changes only if one crashes or drops below 60 fps.
 relicbound/
 ├─ game/                         # Godot project root (project.godot)
 │  ├─ sim/                       # PURE rules: no Node, no scene, no randf()
-│  │  ├─ sim_state.gd            #   RefCounted: grid (PackedInt32Array), objects, rng seed, tick
+│  │  ├─ sim_state.gd            #   RefCounted: per-cell terrain/objects/flags/ids, player, rng, tick, hash()
 │  │  ├─ sim_step.gd             #   static func step(state, intent) -> StepResult {state, events}
-│  │  ├─ rules/                  #   gravity.gd, push.gd, water.gd, sand.gd, ice.gd, lava.gd, gears.gd
-│  │  └─ events.gd               #   BoulderLanded, GemCollected, PlayerCrushed, ...
-│  ├─ levels/                    # level .json + schema + solver.gd
+│  │  ├─ rules/                  #   rule_player.gd, rule_gravity.gd, rule_triggers.gd (+ water, sand, ice...)
+│  │  ├─ sim_event.gd            #   OBJECT_LANDED, GEM_COLLECTED, PLAYER_CRUSHED, ...
+│  │  ├─ tiles.gd                #   terrain/object ids (stored in saves and replays)
+│  │  ├─ level_codec.gd          #   level JSON <-> SimState (legend in the file header)
+│  │  └─ replay.gd               #   input strings ".UDLR" -> final state
+│  ├─ levels/                    # level .json, level_loader.gd (file I/O), later solver.gd
 │  ├─ scenes/                    # boot, main_menu, level, hub, journal, cutscenes
 │  ├─ view/                      # LevelView: GridMap/MultiMesh sync, tick interpolation, camera
 │  ├─ actors/                    # Nadia, enemies, boss visual scenes (AnimationTree)
@@ -85,7 +88,7 @@ relicbound/
 │  ├─ ui/                        # HUD, touch controls, menus, journal (Control nodes)
 │  ├─ platform/                  # save, billing, analytics, haptics (Android/iOS/Web adapters)
 │  ├─ autoload/                  # Game.gd, Settings.gd, Save.gd, Events.gd (singletons)
-│  ├─ addons/                    # gut, effekseer, terrain_3d, (voxel)
+│  ├─ addons/                    # gut, effekseer, terrain_3d
 │  ├─ assets/                    # imported .glb, textures, sprite sheets, audio
 │  └─ tests/                     # GUT tests + golden replays
 ├─ assets_src/                   # .blend, Material Maker .ptex, Effekseer .efkefc, audio stems

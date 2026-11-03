@@ -13,6 +13,18 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
   player's tile. Standing under a resting boulder is safe, as genre veterans expect.
 - The state is plain data, so it can be hashed, serialized for rewind and saves, and replayed in CI.
 
+### Rule details (settled in Sprint 1; the GUT tests in `game/tests/sim/` are the reference)
+- **Pushing:** boulders push sideways only; crates push in all 4 directions. One object at a time (no chain
+  pushes). A moving object can't be pushed, and the far tile must be open floor (not dirt). A pushed object
+  doesn't also fall in the same tick; it falls on the next one.
+- **Rolling:** a round object (boulder, gem) on a resting round object rolls **west first, then east**, only if
+  the side tile and the tile below it are both open. Nothing rolls off crates, and crates never roll.
+- **Gems:** walking into a gem collects it; a falling gem landing on the player is caught (never deadly).
+  The quota defaults to every gem in the level.
+- **Keys & doors:** red ♦, blue ●, gold ▲, jade ■. Walking into a door with a matching key opens it and uses
+  up the key. Keys don't fall.
+- **Exit:** opens on the tick the quota is met (one `EXIT_OPENED` event); stepping onto it completes the level.
+
 ## Core tiles & objects
 | Tile/Object | Behaviour |
 |---|---|
