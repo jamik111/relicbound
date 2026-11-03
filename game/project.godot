@@ -1,0 +1,52 @@
+; Engine configuration file.
+; Pinned to Godot 4.7.2-stable (keep in sync with .github/workflows/ci.yml).
+
+config_version=5
+
+[application]
+
+config/name="Relicbound: The Meridian Expedition"
+config/version="0.0.1"
+run/main_scene="res://scenes/boot.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Events="*res://autoload/events.gd"
+Settings="*res://autoload/settings.gd"
+Save="*res://autoload/save.gd"
+Game="*res://autoload/game.gd"
+
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+gdscript/warnings/inferred_declaration=0
+gdscript/warnings/unsafe_call_argument=1
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+common/physics_ticks_per_second=60
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.web="gl_compatibility"
+rendering_device/fallback_to_opengl3=true
+gl_compatibility/fallback_to_angle=true
+textures/vram_compression/import_etc2_astc=true
+textures/canvas_textures/default_texture_filter=0

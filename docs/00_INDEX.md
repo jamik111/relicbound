@@ -9,3 +9,4 @@
 | 06 | [Tech Stack (ADR-002)](06_TECH_STACK.md) | Android-first Godot 4 stack, how each library fits, architecture |
 | 07 | [Art & Audio](07_ART_AUDIO_DIRECTION.md) | Visual pillars, palettes, asset specs, VFX list |
 | 08 | [Build Roadmap](08_ROADMAP.md) | Setup checklist, sprint-by-sprint tasks, gates, how we work |
+| 09 | [Art Pipeline](09_ART_PIPELINE.md) | Which tool makes which asset, how it gets into Godot, art timing, asset definition of done |

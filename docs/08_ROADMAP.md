@@ -46,7 +46,7 @@ Month:   1        2        3        4    5    6    7    8    9    10   11   12  
 | 0.6 | **Performance spike scene:** a 32×24 tile room (MultiMesh), 8 torch lights, ortho tilted camera, 20 Jolt debris bodies, 10 pixelfx sprites | Holds 60 fps on the mid-range phone, 30+ on Compatibility |
 | 0.7 | **Plugin spike:** install Effekseer for Godot 4 and Terrain3D; build a tiny scene with each and export to Android | Each one is marked "works on Android" or "drop" in the tech doc |
 | 0.8 | godot_voxel spike (time-boxed to 1 day) | Keep or drop (rule: drop if > 3 MB or > 2 ms/frame) |
-| 0.9 | pixelfx bake script: `tools/bake_fx.sh` exports the chosen effects into `game/assets/fx/` | Dust + sparkle play in the spike scene |
+| 0.9 | pixelfx bake script: `tools/bake_fx.ps1` / `tools/bake_fx.sh` export every effect in `tools/fx_list.txt` into `game/assets/fx/<id>/` (see `09_ART_PIPELINE.md` §2) | Dust + sparkle play in the spike scene |
 
 ---
 

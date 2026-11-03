@@ -7,6 +7,7 @@ description: How to build Relicbound (a pulp-adventure grid action-puzzler, Andr
 
 Read `docs/06_TECH_STACK.md` (architecture), `docs/05_GDD_MECHANICS.md` (rules) and `docs/08_ROADMAP.md`
 (the current sprint) before you change code. The Godot project root is `game/`.
+For any art, UI or VFX work, also read and follow `docs/09_ART_PIPELINE.md`.
 
 ## Hard rules
 1. **The sim is pure and always resolves the same way.** `game/sim/` holds `RefCounted` classes and static funcs
@@ -18,11 +19,15 @@ Read `docs/06_TECH_STACK.md` (architecture), `docs/05_GDD_MECHANICS.md` (rules) 
 5. **Static typing everywhere** in GDScript (`var hp: int`, `func f(a: Vector2i) -> bool`).
 6. Budgets: 60 fps on mid-range Android, ≤ 120 draw calls, ≤ 400 MB RAM, base `.aab` ≤ 150 MB.
 7. Everything must also run on the **Compatibility** renderer (low-end Android + web demo).
+8. **Art, UI and VFX follow `docs/09_ART_PIPELINE.md`**: placeholder art only until Gate B (cubes, default theme,
+   placeholder pixelfx, jsfxr); sheets go to `game/assets/fx/<id>/` with Nearest / no mipmaps / Lossless import and
+   `pixel_size` 1/48; UI screens use only `relic_theme.tres` styles; every third-party asset is CC0/CC-BY/OFL/MIT and
+   logged in `CREDITS.md`; check each asset against that doc's definition of done.
 
 ## Library playbook (sources are in `third_party/`)
 | Need | Use | How |
 |---|---|---|
-| Pixel VFX | pixelfx | Use the `pixelfx` skill. `node third_party/pixelfx/tools/list.mjs <words>` → render, look at the contact sheet → `--sheet` → copy the PNG+JSON to `game/assets/fx/` → `AnimatedSprite3D` billboard, nearest filter, fps from `meta.pixelfx.fps`, offset from the pivot |
+| Pixel VFX | pixelfx | Use the `pixelfx` skill. `node third_party/pixelfx/tools/list.mjs <words>` → render, look at the contact sheet → `--sheet` → copy the PNG+JSON to `game/assets/fx/<id>/` (or list it in `tools/fx_list.txt` and run `tools/bake_fx`) → `AnimatedSprite3D` billboard, nearest filter, unshaded, `pixel_size` 1/48, fps from `meta.pixelfx.fps`, offset from the pivot. Start ids per sim event: `docs/09_ART_PIPELINE.md` §2 |
 | Debris / ragdoll | Jolt (built in) | `RigidBody3D` chunks spawned by `VfxRouter` on `BoulderShattered`/`EnemyDefeated`; freed after 3 s; disabled on the Lite tier |
 | Hub NPC walking | Recast (built in) | `NavigationRegion3D` + `NavigationAgent3D`. Never used in puzzle levels (those use grid A* in `sim/`) |
 | Mesh LOD / optimisation | meshoptimizer (built into the importer) | Leave "Generate LODs" on in the import settings; optionally pre-run `gltfpack -si 0.6` |
