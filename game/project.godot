@@ -44,7 +44,7 @@ common/physics_ticks_per_second=60
 [rendering]
 
 renderer/rendering_method="mobile"
-renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.compat="gl_compatibility"
 renderer/rendering_method.web="gl_compatibility"
 rendering_device/fallback_to_opengl3=true
 gl_compatibility/fallback_to_angle=true
