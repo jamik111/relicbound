@@ -111,7 +111,9 @@ localisation string table (month 6), accessibility options (month 8), the iOS ex
 ---
 
 ## How we work
-- **Branching:** `main` is always shippable; one branch per feature; open a PR → CI must pass.
+- **Branching:** `main` is always shippable; one branch per feature; open a PR → CI must pass before merging.
+  Nobody pushes straight to `main`. GitHub branch protection needs a paid plan on private repos, so a local
+  hook enforces it: run `git config core.hooksPath .githooks` once per clone.
 - **Definition of done:** tests pass, works on the reference phone, no new warnings, docs updated if the rules changed.
 - **Weekly:** build on the phone every Friday + a 15-minute playtest + a short note in `docs/devlog/`.
 - **Claude Code:** use the `relicbound-stack` skill for code and the `pixelfx` skill for effects. Ask for one roadmap task ID at a time (e.g. "do task 1.3").
