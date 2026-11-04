@@ -23,6 +23,8 @@ func _ready() -> void:
 	Events.sim_events.connect(_on_sim_events)
 	%RestartButton.pressed.connect(Game.restart)
 	%BackButton.pressed.connect(_on_back)
+	%ControlsButton.pressed.connect(_on_toggle_controls)
+	_update_controls_button()
 	var path: String = Game.level_path if Game.level_path != "" else default_level
 	if not Game.load_level(path):
 		_status_label.text = "Could not load %s" % path
@@ -61,6 +63,18 @@ func _update_hud() -> void:
 		_status_label.text = "The exit is open"
 	else:
 		_status_label.text = ""
+
+
+## Swipe vs stick is an open PRD question (Q1), so playtesters can switch in-level.
+func _on_toggle_controls() -> void:
+	Settings.touch_scheme = (Settings.TouchScheme.STICK if Settings.touch_scheme == Settings.TouchScheme.SWIPE
+		else Settings.TouchScheme.SWIPE)
+	Settings.save_settings()
+	_update_controls_button()
+
+
+func _update_controls_button() -> void:
+	%ControlsButton.text = "Stick" if Settings.touch_scheme == Settings.TouchScheme.STICK else "Swipe"
 
 
 func _on_back() -> void:
