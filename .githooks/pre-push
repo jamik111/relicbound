@@ -1,0 +1,12 @@
+#!/bin/sh
+# Blocks direct pushes to main: changes reach main only through a pull request with green CI.
+# (GitHub branch protection needs a paid plan on private repos; this is the local stand-in.)
+# Enable once per clone: git config core.hooksPath .githooks
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "pre-push: direct pushes to main are blocked. Push a feature branch and open a PR:" >&2
+    echo "  git push -u origin <branch> && gh pr create --base main" >&2
+    exit 1
+  fi
+done
+exit 0
