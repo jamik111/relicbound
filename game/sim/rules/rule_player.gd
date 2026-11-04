@@ -40,6 +40,12 @@ static func apply(s: SimState, dir: Vector2i, done: PackedByteArray, events: Arr
 		s.terrain[s.idx(to)] = Tiles.Terrain.FLOOR
 		events.append(SimEvent.make(SimEvent.Type.DIRT_DUG, to))
 		_move(s, to, events)
+	elif t == Tiles.Terrain.CHECKPOINT:
+		s.terrain[s.idx(to)] = Tiles.Terrain.CHECKPOINT_LIT
+		_move(s, to, events)
+		events.append(SimEvent.make(SimEvent.Type.CHECKPOINT_LIT, to))
+	elif t == Tiles.Terrain.CHECKPOINT_LIT:
+		_move(s, to, events)
 	elif t == Tiles.Terrain.EXIT and s.exit_open:
 		_move(s, to, events)
 		s.won = true

@@ -25,6 +25,10 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
 - **Keys & doors:** red ♦, blue ●, gold ▲, jade ■. Walking into a door with a matching key opens it and uses
   up the key. Keys don't fall.
 - **Exit:** opens on the tick the quota is met (one `EXIT_OPENED` event); stepping onto it completes the level.
+- **Checkpoint idol:** lights when the player steps on it (stays lit); objects can't enter it. 1.0 s after being
+  crushed, the player respawns into the state saved when the last idol was lit (or the level start).
+- **Hourglass:** one use jumps back up to 30 ticks (3 s), even mid-fall or after being crushed. 3 uses per level;
+  respawning doesn't refill them.
 
 ## Core tiles & objects
 | Tile/Object | Behaviour |
@@ -98,6 +102,6 @@ Stars aren't used. Collectibles drive progress: 60% of gems across a world unloc
 
 ## Controls
 - **Touch:** swipe-and-hold (default) or a floating virtual stick. Tool button on the right thumb, Hourglass in the top-right.
-- **Keyboard:** WASD/arrows, Space = tool, Q/E = switch tool, R = rewind, Esc = pause.
+- **Keyboard:** WASD/arrows, Space = tool, Q/E = switch tool, R = rewind, Backspace = restart room, Esc = pause.
 - **Gamepad:** stick/D-pad, A = tool, LB/RB = switch, Y = rewind.
 - Input buffer: the last direction pressed within 120 ms of a tick boundary wins.
