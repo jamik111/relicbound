@@ -104,9 +104,25 @@ The sim never touches a Node. Nodes never change the sim state.
 ## Mobile rendering plan
 - Each tile type is one `MultiMeshInstance3D` (or `GridMap` with a MeshLibrary), so one draw call each.
   Rooms outside the camera are hidden.
-- Orthographic `Camera3D` tilted to 35°. Point lights for torches (≤ 8 visible), baked AO in vertex colour.
-- Quality tiers: **Lite** (Compatibility renderer, no Jolt debris, 0.75 render scale) · **Standard** ·
-  **High** (glow, tilt-shift DOF, colour LUT). Picked automatically from a benchmark on first boot.
+- Orthographic `Camera3D` tilted to 35°. **Torch light is per-tile vertex colour** (MultiMesh instance colours,
+  recomputed ~10×/s for flicker), plus baked AO. Dynamic `OmniLight3D`s are a High-tier extra only (see below).
+- Quality tiers: **Lite** (Compatibility renderer, vertex lighting) · **Standard** (vertex lighting) ·
+  **High** (+ a few real lights, glow, tilt-shift DOF, colour LUT). Picked automatically from a benchmark on first
+  boot. Jolt debris is cheap and stays on in every tier (measured below).
+
+### Device results: Sprint 0 perf spike (2026-11-04)
+Phone: Redmi 5 Plus (Snapdragon 625 / Adreno 506, 2160×1080, Android 12 custom ROM). Low end, below the
+mid-range target. Scene: 32×24 tiles, 8 torches, 20 Jolt debris, pixelfx sprites (`scenes/spikes/perf_spike.gd`).
+
+| Renderer | 8 real lights | 8 real lights, floor in 8×8 chunks | No lights | **Vertex lighting** |
+|---|---|---|---|---|
+| Compatibility | 7.5 fps | 12 fps | 60 fps | **60 fps** (1% low 60) |
+| Mobile (Vulkan) | 7.5 fps (GPU 342 ms) | 7.5 fps | 33 fps (GPU 27 ms even when empty) | 41 fps (1% low 26) |
+
+Takeaways: per-pixel dynamic lights are the cost, not geometry (57 draw calls), debris or effects. On this GPU
+Vulkan has a ~27 ms floor, so low-end phones must get the Compatibility renderer. Gate A on a **mid-range**
+phone (Mobile renderer) is still to be measured. Re-run with `user://spike.cfg` (keys in the spike header) and
+the `Android Compat` export preset (`com.dscvrx.meridian.compat`, installs next to the main app).
 - Pixel VFX are `AnimatedSprite3D` billboards with nearest filtering. This gives the "HD-2D" mix of crisp pixel
   effects over a smooth 3D world.
 - Budgets: 60 fps on mid-range Android (Snapdragon 7-series), ≤ 120 draw calls, ≤ 400 MB RAM, base `.aab` ≤ 150 MB.

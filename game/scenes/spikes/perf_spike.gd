@@ -3,17 +3,39 @@ extends Node3D
 ## A 32x24 tile room drawn with MultiMesh, 8 flickering torch lights, a tilted ortho camera,
 ## 20 Jolt debris bodies that keep respawning, and pixelfx sprites: 8 looping torches plus
 ## dust/sparkle one-shots popping continuously (10+ on screen at once).
-## After SAMPLE_SECONDS it prints avg fps / 1% low / draw calls (visible in `adb logcat -s godot`).
+## After the sample it prints avg fps / 1% low / draw calls (visible in `adb logcat -s godot`), and every
+## 2 s a PERF_TICK line splitting the frame into CPU and GPU render time.
 ## Throwaway spike code: not a template for the real LevelView.
+##
+## Optional user://spike.cfg (section [spike]) changes the load for bisecting on a device, e.g.
+##   torches=0  debris=0  fx=false  render_scale=0.5  sample_seconds=15  autostart=true
+## On a debug APK: adb shell run-as com.dscvrx.meridian sh -c 'printf "[spike]\ntorches=0\n" > files/spike.cfg'
 
 const ROOM_W: int = 32
 const ROOM_H: int = 24
-const TORCH_COUNT: int = 8
-const DEBRIS_COUNT: int = 20
+const CONFIG_PATH: String = "user://spike.cfg"
 const WARMUP_SECONDS: float = 3.0
-const SAMPLE_SECONDS: float = 30.0
+const TICK_LOG_SECONDS: float = 2.0
 ## Seconds between dust/sparkle one-shots (each lives ~1 s, so ~4 alive alongside the torches).
 const BURST_INTERVAL: float = 0.25
+
+var _torch_count: int = 8
+var _debris_count: int = 20
+var _fx_enabled: bool = true
+var _render_scale: float = 1.0
+var _sample_seconds: float = 30.0
+## Floor/wall MultiMesh chunk size in tiles (0 = one mesh for the whole room).
+var _chunk: int = 0
+## "omni": real OmniLight3D torches. "vertex": no lights; tiles are tinted per instance from the torches.
+var _light_mode: String = "omni"
+
+const VERTEX_LIGHT_HZ: float = 10.0
+const TORCH_RANGE: float = 7.0
+var _vertex_meshes: Array[MultiMesh] = []
+var _vertex_positions: Array[PackedVector3Array] = []
+var _vertex_base: Array[Color] = []
+var _torch_positions: PackedVector3Array = PackedVector3Array()
+var _vertex_timer: float = 0.0
 
 var _rng := RandomNumberGenerator.new()
 var _torches: Array[OmniLight3D] = []
@@ -24,10 +46,21 @@ var _burst_timer: float = 0.0
 var _burst_count: int = 0
 var _frame_times: PackedFloat32Array = PackedFloat32Array()
 var _reported: bool = false
+var _tick_log_timer: float = 0.0
+
+
+## True if user://spike.cfg asks to skip the boot screen (used by scripted device runs).
+static func autostart_requested() -> bool:
+	var cfg := ConfigFile.new()
+	return cfg.load(CONFIG_PATH) == OK and bool(cfg.get_value("spike", "autostart", false))
 
 
 func _ready() -> void:
+	_load_config()
 	_rng.seed = 1936
+	var vp: RID = get_viewport().get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
+	get_viewport().scaling_3d_scale = _render_scale
 	# Parse sheets up front so the first burst doesn't hitch.
 	for fx_name: String in ["torch", "dust", "sparkle"]:
 		PixelFx.load_sheet(fx_name)
@@ -44,18 +77,28 @@ func _process(delta: float) -> void:
 	var t: float = _elapsed
 	for i: int in _torches.size():
 		_torches[i].light_energy = 1.6 + 0.35 * sin(t * 9.0 + i * 1.7) + 0.15 * sin(t * 23.0 + i)
+	if _light_mode == "vertex":
+		_vertex_timer += delta
+		if _vertex_timer >= 1.0 / VERTEX_LIGHT_HZ:
+			_vertex_timer = 0.0
+			_update_vertex_light()
 	for body: RigidBody3D in _debris:
 		if body.position.y < -2.0 or body.sleeping:
 			_respawn_debris(body)
-	_burst_timer += delta
-	while _burst_timer >= BURST_INTERVAL:
-		_burst_timer -= BURST_INTERVAL
-		_spawn_burst()
+	if _fx_enabled:
+		_burst_timer += delta
+		while _burst_timer >= BURST_INTERVAL:
+			_burst_timer -= BURST_INTERVAL
+			_spawn_burst()
 	_maybe_screenshot()
 	if _elapsed > WARMUP_SECONDS and not _reported:
 		_frame_times.append(delta)
-		if _elapsed > WARMUP_SECONDS + SAMPLE_SECONDS:
+		if _elapsed > WARMUP_SECONDS + _sample_seconds:
 			_report()
+	_tick_log_timer += delta
+	if _tick_log_timer >= TICK_LOG_SECONDS:
+		_tick_log_timer = 0.0
+		print("PERF_TICK %s" % _timing_summary())
 	_update_overlay()
 
 
@@ -74,18 +117,27 @@ func _build_environment() -> void:
 
 
 func _build_room() -> void:
-	var floor_xforms: Array[Transform3D] = []
-	var wall_xforms: Array[Transform3D] = []
+	# Group tiles by chunk (one group when _chunk == 0); each group becomes one MultiMesh per tile type.
+	var floor_groups: Dictionary = {}
+	var wall_groups: Dictionary = {}
 	for y: int in ROOM_H:
 		for x: int in ROOM_W:
+			var key := Vector2i(x / _chunk, y / _chunk) if _chunk > 0 else Vector2i.ZERO
 			var edge: bool = x == 0 or y == 0 or x == ROOM_W - 1 or y == ROOM_H - 1
 			var pillar: bool = x % 6 == 3 and y % 5 == 2
-			if edge or pillar:
-				wall_xforms.append(Transform3D(Basis(), Vector3(x, 0.5, y)))
-			else:
-				floor_xforms.append(Transform3D(Basis(), Vector3(x, -0.05, y)))
-	_add_multimesh(_box(Vector3(1.0, 0.1, 1.0)), Color(0.55, 0.5, 0.42), floor_xforms)
-	_add_multimesh(_box(Vector3(1.0, 1.0, 1.0)), Color(0.42, 0.45, 0.38), wall_xforms)
+			var groups: Dictionary = wall_groups if edge or pillar else floor_groups
+			if not groups.has(key):
+				groups[key] = [] as Array[Transform3D]
+			var pos := Vector3(x, 0.5, y) if edge or pillar else Vector3(x, -0.05, y)
+			(groups[key] as Array[Transform3D]).append(Transform3D(Basis(), pos))
+	var floor_mesh: ArrayMesh = _box(Vector3(1.0, 0.1, 1.0))
+	var wall_mesh: ArrayMesh = _box(Vector3(1.0, 1.0, 1.0))
+	_set_material(floor_mesh, Color(0.55, 0.5, 0.42))
+	_set_material(wall_mesh, Color(0.42, 0.45, 0.38))
+	for key: Vector2i in floor_groups:
+		_add_multimesh(floor_mesh, Color(0.55, 0.5, 0.42), floor_groups[key])
+	for key: Vector2i in wall_groups:
+		_add_multimesh(wall_mesh, Color(0.42, 0.45, 0.38), wall_groups[key])
 
 	# Static ground collider for the debris (one box, not per tile).
 	var ground := StaticBody3D.new()
@@ -98,20 +150,62 @@ func _build_room() -> void:
 	add_child(ground)
 
 
-func _add_multimesh(mesh: Mesh, color: Color, xforms: Array[Transform3D]) -> void:
+func _set_material(mesh: Mesh, color: Color) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.roughness = 0.9
+	if _light_mode == "vertex":
+		# Lighting comes from the per-instance colour, so skip per-pixel lighting entirely.
+		mat.albedo_color = Color.WHITE
+		mat.vertex_color_use_as_albedo = true
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mesh.surface_set_material(0, mat)
+
+
+func _add_multimesh(mesh: Mesh, color: Color, xforms: Array[Transform3D]) -> void:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = _light_mode == "vertex"
 	mm.mesh = mesh
 	mm.instance_count = xforms.size()
+	var positions := PackedVector3Array()
 	for i: int in xforms.size():
 		mm.set_instance_transform(i, xforms[i])
+		positions.append(xforms[i].origin)
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	add_child(mmi)
+	if _light_mode == "vertex":
+		_vertex_meshes.append(mm)
+		_vertex_positions.append(positions)
+		_vertex_base.append(color)
+
+
+## Tints every tile from ambient plus each torch's flickering falloff. Runs at VERTEX_LIGHT_HZ, not per frame.
+func _update_vertex_light() -> void:
+	var ambient: float = 0.25
+	var energies := PackedFloat32Array()
+	for i: int in _torch_positions.size():
+		energies.append(0.9 + 0.2 * sin(_elapsed * 9.0 + i * 1.7) + 0.08 * sin(_elapsed * 23.0 + i))
+	var warm := Color(1.0, 0.65, 0.35)
+	var range_sq: float = TORCH_RANGE * TORCH_RANGE
+	for m: int in _vertex_meshes.size():
+		var mm: MultiMesh = _vertex_meshes[m]
+		var positions: PackedVector3Array = _vertex_positions[m]
+		var base: Color = _vertex_base[m]
+		for i: int in positions.size():
+			var p: Vector3 = positions[i]
+			var r: float = ambient
+			var g: float = ambient
+			var b: float = ambient
+			for t: int in _torch_positions.size():
+				var d_sq: float = p.distance_squared_to(_torch_positions[t])
+				if d_sq < range_sq:
+					var k: float = (1.0 - d_sq / range_sq) * energies[t]
+					r += warm.r * k
+					g += warm.g * k
+					b += warm.b * k
+			mm.set_instance_color(i, Color(base.r * r, base.g * g, base.b * b))
 
 
 func _box(size: Vector3) -> ArrayMesh:
@@ -122,18 +216,42 @@ func _box(size: Vector3) -> ArrayMesh:
 	return arr_mesh
 
 
+func _load_config() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(CONFIG_PATH) != OK:
+		return
+	_torch_count = int(cfg.get_value("spike", "torches", _torch_count))
+	_debris_count = int(cfg.get_value("spike", "debris", _debris_count))
+	_fx_enabled = bool(cfg.get_value("spike", "fx", _fx_enabled))
+	_render_scale = float(cfg.get_value("spike", "render_scale", _render_scale))
+	_sample_seconds = float(cfg.get_value("spike", "sample_seconds", _sample_seconds))
+	_chunk = int(cfg.get_value("spike", "chunk", _chunk))
+	_light_mode = str(cfg.get_value("spike", "light_mode", _light_mode))
+
+
+func _config_summary() -> String:
+	return "torches=%d debris=%d fx=%s scale=%.2f chunk=%d light=%s" % [
+		_torch_count, _debris_count, _fx_enabled, _render_scale, _chunk, _light_mode]
+
+
 func _build_torches() -> void:
-	for i: int in TORCH_COUNT:
-		var light := OmniLight3D.new()
+	for i: int in _torch_count:
 		var col: int = i % 4
 		var row: int = i / 4
-		light.position = Vector3(4.0 + col * 8.0, 1.6, 6.0 + row * 12.0)
-		light.light_color = Color(1.0, 0.65, 0.35)
-		light.omni_range = 7.0
-		light.shadow_enabled = false
-		add_child(light)
-		_torches.append(light)
-		PixelFx.spawn(self, "torch", Vector3(light.position.x, 0.0, light.position.z))
+		var pos := Vector3(4.0 + col * 8.0, 1.6, 6.0 + row * 12.0)
+		_torch_positions.append(Vector3(pos.x, 0.0, pos.z))
+		if _light_mode == "omni":
+			var light := OmniLight3D.new()
+			light.position = pos
+			light.light_color = Color(1.0, 0.65, 0.35)
+			light.omni_range = TORCH_RANGE
+			light.shadow_enabled = false
+			add_child(light)
+			_torches.append(light)
+		if _fx_enabled:
+			PixelFx.spawn(self, "torch", Vector3(pos.x, 0.0, pos.z))
+	if _light_mode == "vertex":
+		_update_vertex_light()
 
 
 func _build_debris() -> void:
@@ -143,7 +261,7 @@ func _build_debris() -> void:
 	mesh.surface_set_material(0, mat)
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(0.25, 0.25, 0.25)
-	for i: int in DEBRIS_COUNT:
+	for i: int in _debris_count:
 		var body := RigidBody3D.new()
 		body.can_sleep = true
 		var mi := MeshInstance3D.new()
@@ -202,12 +320,22 @@ func _maybe_screenshot() -> void:
 			set_meta(&"shot_taken", true)
 			get_viewport().get_texture().get_image().save_png(arg.trim_prefix("--screenshot="))
 
-func _update_overlay() -> void:
-	_stats.text = "FPS %d  |  %.2f ms\ndraw calls %d  |  objects %d\n%s  |  %s" % [
+func _timing_summary() -> String:
+	var vp: RID = get_viewport().get_viewport_rid()
+	return "fps=%d gpu_ms=%.1f render_cpu_ms=%.1f process_ms=%.1f physics_ms=%.1f draws=%d %s" % [
 		Engine.get_frames_per_second(),
+		RenderingServer.viewport_get_measured_render_time_gpu(vp),
+		RenderingServer.viewport_get_measured_render_time_cpu(vp) + RenderingServer.get_frame_setup_time_cpu(),
 		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+		Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
 		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
-		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+		_config_summary(),
+	]
+
+
+func _update_overlay() -> void:
+	_stats.text = "%s\n%s  |  %s" % [
+		_timing_summary().replace(" torches", "\ntorches"),
 		RenderingServer.get_current_rendering_method(),
 		"sampling..." if not _reported else "done (see log)",
 	]
@@ -226,9 +354,9 @@ func _report() -> void:
 	for i: int in worst_count:
 		worst_total += sorted[sorted.size() - 1 - i]
 	var low_fps: float = worst_count / worst_total
-	var line: String = "PERF_SPIKE renderer=%s device=%s avg_fps=%.1f low1_fps=%.1f draw_calls=%d frames=%d" % [
+	var line: String = "PERF_SPIKE renderer=%s device=%s avg_fps=%.1f low1_fps=%.1f draw_calls=%d frames=%d %s" % [
 		RenderingServer.get_current_rendering_method(), OS.get_model_name(), avg_fps, low_fps,
-		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), sorted.size()]
+		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), sorted.size(), _config_summary()]
 	print(line)
 	var file := FileAccess.open("user://perf_spike.log", FileAccess.READ_WRITE if FileAccess.file_exists("user://perf_spike.log") else FileAccess.WRITE)
 	if file:
