@@ -57,6 +57,7 @@ static func _fall(s: SimState, c: Vector2i, below: Vector2i, done: PackedByteArr
 	s.set_moving(below, true)
 	done[s.idx(below)] = 1
 	events.append(SimEvent.make(SimEvent.Type.OBJECT_FELL, c, below, obj, id))
+	RuleHazards.settle(s, below, events)
 
 
 static func _try_roll(s: SimState, c: Vector2i, side: Vector2i, done: PackedByteArray,
@@ -70,4 +71,5 @@ static func _try_roll(s: SimState, c: Vector2i, side: Vector2i, done: PackedByte
 	s.set_moving(to, true)
 	done[s.idx(to)] = 1
 	events.append(SimEvent.make(SimEvent.Type.OBJECT_ROLLED, c, to, obj, id))
+	RuleHazards.settle(s, to, events)
 	return true

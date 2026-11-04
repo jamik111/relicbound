@@ -168,7 +168,7 @@ func _advance() -> void:
 	for e: SimEvent in result.events:
 		if e.type == SimEvent.Type.CHECKPOINT_LIT:
 			_checkpoint = state
-		elif e.type == SimEvent.Type.PLAYER_CRUSHED:
+		elif e.type == SimEvent.Type.PLAYER_CRUSHED or e.type == SimEvent.Type.PLAYER_KILLED:
 			_respawn_timer = RESPAWN_DELAY
 	Events.sim_events.emit(state.tick, result.events)
 	Events.sim_ticked.emit(state.tick)

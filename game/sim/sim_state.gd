@@ -126,9 +126,9 @@ func move_object(from: Vector2i, to: Vector2i) -> void:
 	ids[a] = 0
 
 
-## True if an object may move into `c`: floor terrain, no object, no (living) player.
+## True if an object may move into `c`: floor-like terrain or a pit, no object, no (living) player.
 func is_open_for_object(c: Vector2i) -> bool:
-	return terrain_at(c) == Tiles.Terrain.FLOOR and object_at(c) == Tiles.Obj.NONE and (c != player or not alive)
+	return Tiles.object_can_enter(terrain_at(c)) and object_at(c) == Tiles.Obj.NONE and (c != player or not alive)
 
 
 func count_objects(obj: int) -> int:

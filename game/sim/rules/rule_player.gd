@@ -34,8 +34,8 @@ static func apply(s: SimState, dir: Vector2i, done: PackedByteArray, events: Arr
 		return
 
 	var t: int = s.terrain_at(to)
-	if t == Tiles.Terrain.FLOOR:
-		_move(s, to, events)
+	if Tiles.is_floor_like(t) or t == Tiles.Terrain.PIT:
+		_move(s, to, events)  # hazards (pit, spikes) are judged in their own phase
 	elif t == Tiles.Terrain.DIRT:
 		s.terrain[s.idx(to)] = Tiles.Terrain.FLOOR
 		events.append(SimEvent.make(SimEvent.Type.DIRT_DUG, to))
@@ -61,6 +61,7 @@ static func apply(s: SimState, dir: Vector2i, done: PackedByteArray, events: Arr
 
 
 static func _move(s: SimState, to: Vector2i, events: Array[SimEvent]) -> void:
+	RuleHazards.on_player_left(s, s.player, events)
 	events.append(SimEvent.make(SimEvent.Type.PLAYER_MOVED, s.player, to))
 	s.player = to
 
@@ -83,4 +84,5 @@ static func _try_push(s: SimState, at: Vector2i, dir: Vector2i, done: PackedByte
 	s.move_object(at, dest)
 	done[s.idx(dest)] = 1
 	events.append(SimEvent.make(SimEvent.Type.OBJECT_PUSHED, at, dest, obj, id))
+	RuleHazards.settle(s, dest, events)
 	return true
