@@ -119,7 +119,7 @@ func _update_hud() -> void:
 	if s.won:
 		_status_label.text = "Level complete!"
 	elif not s.alive:
-		_status_label.text = "Crushed!" + ("  Rewind?" if Game.rewinds_left > 0 else "")
+		_status_label.text = "You died" + ("  Rewind?" if Game.rewinds_left > 0 else "")
 	elif not s.echoes.is_empty():
 		_status_label.text = _echo_status(s.echoes[-1])
 	elif Game.rewinds_left <= 0:

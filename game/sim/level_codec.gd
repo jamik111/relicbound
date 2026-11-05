@@ -42,6 +42,13 @@ const OBJECT_CHARS: Dictionary = {
 	"j": Tiles.Obj.KEY_JADE,
 }
 
+## Enemies are placed in the objects layer: char -> [kind, starting direction].
+const ENEMY_CHARS: Dictionary = {
+	"v": [SimEnemy.Kind.VIPER, Vector2i.RIGHT],
+	"V": [SimEnemy.Kind.VIPER, Vector2i.DOWN],
+	"w": [SimEnemy.Kind.BAT, Vector2i(1, 1)],
+}
+
 const PLAYER_CHAR: String = "@"
 const EMPTY_CHAR: String = "."
 
@@ -90,6 +97,9 @@ static func parse(data: Dictionary, errors: PackedStringArray) -> SimState:
 				s.player = c
 			elif OBJECT_CHARS.has(oc):
 				s.spawn_object(c, OBJECT_CHARS[oc])
+			elif ENEMY_CHARS.has(oc):
+				var enemy: Array = ENEMY_CHARS[oc]
+				RuleEnemies.spawn(s, enemy[0], c, enemy[1])
 			else:
 				errors.append("objects: unknown char '%s' at %s" % [oc, c])
 	if players != 1:
@@ -121,7 +131,7 @@ static func from_combined(rows: PackedStringArray, meta: Dictionary = {}) -> Dic
 		var t_row: String = ""
 		var o_row: String = ""
 		for ch: String in row:
-			if ch == PLAYER_CHAR or OBJECT_CHARS.has(ch):
+			if ch == PLAYER_CHAR or OBJECT_CHARS.has(ch) or ENEMY_CHARS.has(ch):
 				t_row += EMPTY_CHAR
 				o_row += ch
 			else:

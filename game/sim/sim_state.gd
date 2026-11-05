@@ -31,6 +31,7 @@ var rng_state: int = 1
 
 ## Active echoes of the player's past self, oldest first (RuleEcho).
 var echoes: Array[SimEcho] = []
+var enemies: Array[SimEnemy] = []
 ## True while every pressure plate in the level is active.
 var gates_open: bool = false
 
@@ -74,6 +75,8 @@ func copy() -> SimState:
 	s.gates_open = gates_open
 	for e: SimEcho in echoes:
 		s.echoes.append(e.copy())
+	for e: SimEnemy in enemies:
+		s.enemies.append(e.copy())
 	return s
 
 
@@ -189,5 +192,7 @@ func hash() -> String:
 	if gates_open:
 		ctx.update(PackedByteArray([1]))
 	for e: SimEcho in echoes:
+		ctx.update(e.to_ints().to_byte_array())
+	for e: SimEnemy in enemies:
 		ctx.update(e.to_ints().to_byte_array())
 	return ctx.finish().hex_encode()

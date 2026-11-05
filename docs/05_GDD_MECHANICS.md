@@ -93,14 +93,16 @@ yourself: this is what makes Relicbound more than another boulder puzzler.
 ## Enemies
 | Enemy | World | Behaviour | Counter |
 |---|---|---|---|
-| Pit viper | 1+ | Patrols a line, turns at walls | Crush it, or block it with a crate |
-| Cave bat | 1+ | Flies diagonally, ignores walls | Lantern scares it away |
+| Pit viper | 1+ | Patrols a line at half walking speed, turns at walls and objects | Crush it, block it with a crate, or sacrifice an echo to turn it back |
+| Cave bat | 1+ | Flies diagonally, ignores walls and objects, bounces off the map edge | Lantern scares it away; an echo in its path turns it back |
 | Scarab swarm | 2 | Follows your trail 5 tiles behind | Lead it under falling sand |
 | Mummified sentinel | 2 | Wakes when you're in line of sight, then chases (A* on the grid) | Doors, boulders, decoy |
 | Ice wolf | 3 | Slides on ice toward you | Make it slide into spikes or water |
 | Magma slug | 4 | Leaves a lava trail | Water, crushing |
 | Gilded Compass agent | 2–5 | Races you for the exit gems (an NPC "rival run") | Outsmart it: block its route |
 | Clockwork sentry | 5 | Moves only on the beat | Read the rhythm |
+
+Enemies kill on touch, except on an idol. An enemy that touches an echo destroys it and turns back.
 
 ## Level beat structure (template)
 1. **Hook room:** see the exit or treasure, but you can't reach it.
