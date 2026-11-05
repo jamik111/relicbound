@@ -148,6 +148,23 @@ func test_level_7_cant_be_won_with_any_single_scar() -> void:
 		assert_false(_explore(RuleMemory.scarred(start, cell))["won"], "scar at %s" % cell)
 
 
+## A second route the search can't see: a scar one cell past the near plate stops the next remnant on that plate, and
+## it holds the gate open until the dart destroys it. Still two deaths, far plate first.
+func test_level_7_can_also_be_won_with_a_remnant_holding_the_near_plate() -> void:
+	var far: String = "R.U.U.R.R.R.R.R.R." + ".".repeat(12)
+	var past_near: String = "R.U.U.R.R.R." + ".".repeat(18)
+	var run: String = "R.R.R.R.R.R.R.R.R.R.R.R."
+	var s: SimState = Replay.run(LevelLoader.load_state(LEVEL_7), far + "X" + past_near + "X" + run)
+	assert_true(s.won)
+	assert_eq(s.scars.size(), 2)
+
+
+func test_saved_scars_go_back_in_order_and_skip_cells_that_dont_fit() -> void:
+	var s: SimState = _remembering(["#####", "#@..#", "#####"])
+	var cells := PackedInt32Array([s.idx(Vector2i(3, 1)), s.idx(Vector2i(0, 0)), s.idx(Vector2i(2, 1))])
+	assert_eq(RuleMemory.with_scars(s, cells).scars, PackedInt32Array([s.idx(Vector2i(3, 1)), s.idx(Vector2i(2, 1))]))
+
+
 func test_level_7_near_plate_first_cuts_off_the_far_plate() -> void:
 	var near: SimState = RuleMemory.scarred(LevelLoader.load_state(LEVEL_7), NEAR_PLATE)
 	assert_false(_explore(near)["deaths"].has(FAR_PLATE))
