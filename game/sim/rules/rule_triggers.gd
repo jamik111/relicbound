@@ -25,7 +25,7 @@ static func _update_gates(s: SimState, events: Array[SimEvent]) -> void:
 			continue
 		var c := Vector2i(i % s.width, i / s.width)
 		var obj: int = s.objects[i]
-		var occupied: bool = (obj == Tiles.Obj.BOULDER or obj == Tiles.Obj.CRATE or s.echo_at(c) != null
+		var occupied: bool = (obj == Tiles.Obj.BOULDER or obj == Tiles.Obj.CRATE or obj == Tiles.Obj.SCAR or s.echo_at(c) != null
 			or (c == s.player and s.alive))
 		if t == Tiles.Terrain.PLATE:
 			plates += 1

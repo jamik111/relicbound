@@ -22,7 +22,7 @@ func _walks_too_fast(inputs: String) -> bool:
 
 func test_every_greybox_level_has_a_solution_at_walking_speed() -> void:
 	var levels: PackedStringArray = LevelLoader.levels_in("res://levels/greybox/")
-	assert_eq(levels.size(), 6)
+	assert_eq(levels.size(), 7)
 	var solved: Dictionary = {}
 	for f: String in DirAccess.get_files_at(REPLAYS):
 		if f.ends_with(".json"):

@@ -109,6 +109,8 @@ static func parse(data: Dictionary, errors: PackedStringArray) -> SimState:
 
 	s.gems_required = int(meta.get("gems_required", s.count_objects(Tiles.Obj.GEM)))
 	s.exit_open = s.gems_required <= 0
+	s.remembers = bool(meta.get("remembers", false))
+	s.hourglass_uses = int(meta.get("rewinds", s.hourglass_uses))
 	return s
 
 

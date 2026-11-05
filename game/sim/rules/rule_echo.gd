@@ -46,6 +46,8 @@ static func _step(s: SimState, e: SimEcho, dir: Vector2i, done: PackedByteArray,
 	e.facing = dir
 	var to: Vector2i = e.cell + dir
 	var obj: int = s.object_at(to)
+	if obj == Tiles.Obj.SCAR:
+		return
 	if (obj == Tiles.Obj.BOULDER or obj == Tiles.Obj.CRATE) and not RulePlayer.try_push(s, to, dir, done, events):
 		return
 	var t: int = s.terrain_at(to)

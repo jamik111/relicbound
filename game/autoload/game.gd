@@ -45,6 +45,8 @@ var _checkpoint: SimState
 ## Hourglass uses when that state was saved. Dying gives them back: the echoes they made are gone too,
 ## and a room that needs an echo would otherwise become unwinnable.
 var _checkpoint_rewinds: int = REWIND_CHARGES
+## Inputs since that state was saved, while alive: what a remnant replays (RuleMemory).
+var _attempt := PackedInt32Array()
 ## An idol was lit but the room isn't settled yet: save as soon as nothing is moving.
 var _checkpoint_pending: bool = false
 ## Counts down after a crush; < 0 when no respawn is pending.
@@ -73,11 +75,12 @@ func load_level(path: String) -> bool:
 	_held.clear()
 	_history.clear()
 	_checkpoint = s
-	_checkpoint_rewinds = REWIND_CHARGES
+	_checkpoint_rewinds = s.hourglass_uses
+	_attempt.clear()
 	_checkpoint_pending = false
 	_move_cooldown = 0
 	_respawn_timer = -1.0
-	rewinds_left = REWIND_CHARGES
+	rewinds_left = s.hourglass_uses
 	running = true
 	Events.level_loaded.emit()
 	return true
@@ -100,6 +103,7 @@ func rewind() -> bool:
 		return false
 	var recorded: PackedInt32Array = _history.intents()
 	_replace_state(RuleEcho.spawned(_history.rewind_all(), recorded))
+	_attempt.resize(maxi(0, state.tick - _checkpoint.tick))
 	rewinds_left -= 1
 	Events.rewound.emit(rewinds_left)
 	return true
@@ -109,7 +113,12 @@ func rewind() -> bool:
 func respawn() -> void:
 	_history.clear()
 	rewinds_left = _checkpoint_rewinds
-	_replace_state(_checkpoint)
+	var next: SimState = _checkpoint
+	if state.remembers and not state.alive:
+		_checkpoint = RuleMemory.scarred(_checkpoint, state.player)
+		next = RuleMemory.with_remnant(_checkpoint, _attempt)
+	_attempt.clear()
+	_replace_state(next)
 	Events.respawned.emit()
 
 
@@ -177,6 +186,8 @@ func _process(delta: float) -> void:
 
 func _advance() -> void:
 	var intent: SimStep.Intent = _take_intent()
+	if state.alive:
+		_attempt.append(intent)
 	var result: StepResult = SimStep.step(state, intent)
 	_history.push(state, intent)
 	prev_state = state
@@ -190,6 +201,7 @@ func _advance() -> void:
 	if _checkpoint_pending and _room_is_settled(state):
 		_checkpoint = state
 		_checkpoint_rewinds = rewinds_left
+		_attempt.clear()
 		_checkpoint_pending = false
 		Events.checkpoint_saved.emit()
 	Events.sim_events.emit(state.tick, result.events)

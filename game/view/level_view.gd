@@ -52,6 +52,9 @@ const GEM_SPIN_SPEED: float = 2.5
 const GEM_BOB_HEIGHT: float = 0.06
 const PLATE_ACTIVE_COLOR: Color = Color(1.0, 0.95, 0.4)
 const ECHO_COLOR: Color = Color(0.5, 1.0, 1.0, 0.8)
+## A failed attempt replaying, and the statue left where you died: red, so they never read as your helpful echoes.
+const REMNANT_COLOR: Color = Color(1.0, 0.35, 0.3, 0.8)
+const SCAR_COLOR: Color = Color(0.62, 0.16, 0.14)
 const VIPER_PATH_COLOR: Color = Color(0.55, 0.95, 0.2)
 const BAT_PATH_COLOR: Color = Color(0.8, 0.45, 1.0)
 const VIPER_SCALE: float = 1.5
@@ -584,7 +587,8 @@ func _sync_echoes() -> void:
 			view["to"] = e.cell
 			view["tick"] = _cur.tick
 		var fade: float = clampf(e.linger / ECHO_FADE_TICKS, 0.0, 1.0)
-		(view["material"] as StandardMaterial3D).albedo_color.a = ECHO_COLOR.a * fade
+		var base_alpha: float = REMNANT_COLOR.a if e.remnant else ECHO_COLOR.a
+		(view["material"] as StandardMaterial3D).albedo_color.a = base_alpha * fade
 	for id: int in _echo_views.keys():
 		if not alive_ids.has(id):
 			((_echo_views[id] as Dictionary)["node"] as Node).queue_free()
@@ -592,7 +596,7 @@ func _sync_echoes() -> void:
 
 
 func _make_echo_view(e: SimEcho) -> Dictionary:
-	var mat: StandardMaterial3D = GreyboxMeshes.material(ECHO_COLOR)
+	var mat: StandardMaterial3D = GreyboxMeshes.material(REMNANT_COLOR if e.remnant else ECHO_COLOR)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	var node := MeshInstance3D.new()
 	node.mesh = _meshes[&"echo"]
@@ -626,6 +630,9 @@ func _spawn_object(id: int, obj: int) -> void:
 		Tiles.Obj.GEM:
 			mi.mesh = _meshes[&"gem"]
 			color = Color(0.25, 1.0, 0.95)
+		Tiles.Obj.SCAR:
+			mi.mesh = _meshes[&"echo"]
+			color = SCAR_COLOR
 		_:
 			mi.mesh = _meshes[&"key"]
 			color = KEY_COLORS[Tiles.key_color(obj)] if Tiles.is_key(obj) else Color.MAGENTA
