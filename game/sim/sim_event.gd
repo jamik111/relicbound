@@ -17,6 +17,7 @@ enum Type {
 	EXIT_OPENED,       ## cell = exit tile
 	LEVEL_COMPLETED,   ## cell = exit tile
 	PLAYER_CRUSHED,    ## cell, object = what fell on the player
+	CHECKPOINT_LIT,    ## cell = the idol; Game snapshots the state for respawn
 }
 
 var type: Type

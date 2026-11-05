@@ -9,6 +9,9 @@ enum Terrain {
 	ANCIENT_WALL = 2,
 	DIRT = 3,
 	EXIT = 4,
+	## Checkpoint idol: the player can stand on it; objects can't enter. Lights when the player steps on it.
+	CHECKPOINT = 5,
+	CHECKPOINT_LIT = 6,
 	DOOR_RED = 10,
 	DOOR_BLUE = 11,
 	DOOR_GOLD = 12,

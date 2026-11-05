@@ -11,5 +11,12 @@ signal sim_ticked(tick: int)
 ## Emitted when Game loads or restarts a level: views rebuild from Game.state.
 signal level_loaded()
 
+## Game.state was swapped for an earlier one (rewind or respawn): views rebuild without ticking.
+signal state_replaced()
+## The hourglass was used (RewindUsed in the art pipeline's VFX table).
+signal rewound(charges_left: int)
+## The player respawned at the last checkpoint after being crushed.
+signal respawned()
+
 signal quality_tier_changed(tier: int)
 signal settings_changed()

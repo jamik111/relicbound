@@ -20,6 +20,8 @@ const TERRAIN_COLORS: Dictionary = {
 	Tiles.Terrain.ANCIENT_WALL: Color(0.55, 0.50, 0.36),
 	Tiles.Terrain.DIRT: Color(0.45, 0.33, 0.22),
 	Tiles.Terrain.EXIT: Color(0.25, 0.22, 0.18),
+	Tiles.Terrain.CHECKPOINT: Color(0.35, 0.38, 0.33),
+	Tiles.Terrain.CHECKPOINT_LIT: Color(0.35, 1.0, 0.70),
 	Tiles.Terrain.DOOR_RED: Color(0.80, 0.22, 0.20),
 	Tiles.Terrain.DOOR_BLUE: Color(0.22, 0.42, 0.85),
 	Tiles.Terrain.DOOR_GOLD: Color(0.90, 0.72, 0.20),
@@ -56,6 +58,7 @@ func _ready() -> void:
 		&"dirt": GreyboxMeshes.box(Vector3(1.0, 0.45, 1.0)),
 		&"door": GreyboxMeshes.box(Vector3(0.9, 0.9, 0.9)),
 		&"exit": GreyboxMeshes.box(Vector3(0.9, 0.12, 0.9)),
+		&"idol": GreyboxMeshes.box(Vector3(0.35, 0.75, 0.35)),
 		&"boulder": GreyboxMeshes.ball(0.44),
 		&"crate": GreyboxMeshes.box(Vector3(0.8, 0.8, 0.8)),
 		&"gem": GreyboxMeshes.gem(0.3),
@@ -97,7 +100,7 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 	for e: Variant in events:
 		var ev: SimEvent = e as SimEvent
 		match ev.type:
-			SimEvent.Type.DIRT_DUG, SimEvent.Type.DOOR_OPENED, SimEvent.Type.EXIT_OPENED:
+			SimEvent.Type.DIRT_DUG, SimEvent.Type.DOOR_OPENED, SimEvent.Type.EXIT_OPENED, 					SimEvent.Type.CHECKPOINT_LIT:
 				terrain_changed = true
 	if terrain_changed:
 		_build_terrain()
@@ -167,6 +170,8 @@ func _terrain_mesh_key(t: int) -> StringName:
 		return &"dirt"
 	if t == Tiles.Terrain.EXIT:
 		return &"exit"
+	if t == Tiles.Terrain.CHECKPOINT or t == Tiles.Terrain.CHECKPOINT_LIT:
+		return &"idol"
 	return &"door"
 
 

@@ -1,14 +1,21 @@
 {
 	"id": "test_02_gravity",
-	"size": [12, 8],
-	"meta": {"name": "Test 02: falling and rolling", "gems_required": 1, "seed": 1},
+	"size": [
+		12,
+		8
+	],
+	"meta": {
+		"name": "Test 02: falling and rolling",
+		"gems_required": 1,
+		"seed": 1
+	},
 	"layers": {
 		"terrain": [
 			"############",
 			"#..........#",
 			"#..........#",
 			"#..::..##..#",
-			"#..........#",
+			"#.I........#",
 			"#.#......#.#",
 			"#.#..E...#.#",
 			"############"

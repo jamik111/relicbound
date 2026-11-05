@@ -17,6 +17,7 @@ const TERRAIN_CHARS: Dictionary = {
 	"%": Tiles.Terrain.ANCIENT_WALL,
 	":": Tiles.Terrain.DIRT,
 	"E": Tiles.Terrain.EXIT,
+	"I": Tiles.Terrain.CHECKPOINT,
 	"R": Tiles.Terrain.DOOR_RED,
 	"B": Tiles.Terrain.DOOR_BLUE,
 	"G": Tiles.Terrain.DOOR_GOLD,

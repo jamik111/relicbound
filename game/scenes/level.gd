@@ -21,6 +21,8 @@ func _ready() -> void:
 	add_child(env)
 	Events.level_loaded.connect(_on_level_loaded)
 	Events.sim_events.connect(_on_sim_events)
+	Events.state_replaced.connect(_on_state_replaced)
+	%RewindButton.pressed.connect(Game.rewind)
 	%RestartButton.pressed.connect(Game.restart)
 	%BackButton.pressed.connect(_on_back)
 	%ControlsButton.pressed.connect(_on_toggle_controls)
@@ -43,6 +45,12 @@ func _on_level_loaded() -> void:
 	_update_hud()
 
 
+## Rewind or respawn: rebuild from the restored state; the camera eases over instead of snapping.
+func _on_state_replaced() -> void:
+	_view.build(Game.state)
+	_update_hud()
+
+
 func _on_sim_events(_tick: int, events: Array) -> void:
 	_view.show_state(Game.prev_state, Game.state, events)
 	_update_hud()
@@ -55,10 +63,12 @@ func _update_hud() -> void:
 		if s.keys[c] > 0:
 			keys += "  %s×%d" % [KEY_SHAPES[c], s.keys[c]]
 	_gems_label.text = "Gems %d/%d%s" % [s.gems_collected, s.gems_required, keys]
+	%RewindButton.text = "⌛ %d" % Game.rewinds_left
+	%RewindButton.disabled = Game.rewinds_left <= 0
 	if s.won:
 		_status_label.text = "Level complete!"
 	elif not s.alive:
-		_status_label.text = "Crushed! Restart to try again"
+		_status_label.text = "Crushed!" + ("  Rewind?" if Game.rewinds_left > 0 else "")
 	elif s.exit_open and s.gems_required > 0:
 		_status_label.text = "The exit is open"
 	else:
