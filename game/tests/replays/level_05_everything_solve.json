@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/greybox/level_05_everything.json",
+	"note": "Echo holds the gate; cross the spikes between phases; key, door; shelter from the dart; push the boulder into the pit; idol; gem; exit.",
+	"inputs": "R.R.R.R.R.R.R.R. H R.R.R. L.L. ...... D.D. R.R.R.R.R.R.R.R.R.R.R.R.R.R.R. D. ........ D. L.L.L.L.L.L.L.L.L.L.L.L.L.L.L.",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 2
+	},
+	"hash": "15c11083bc92402777c1fb27a4f7181db3bd78a0bea89ea545ebc0e968c4ec5c"
+}

@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/greybox/level_04_two_echoes.json",
+	"note": "Rewinding keeps the first echo, so both replay together and hold both plates.",
+	"inputs": "L.L.L.L.L. H R.R.R.R.R. H .......... D.D. R.R.R. L.L.L.L.L.L.L.",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 1
+	},
+	"hash": "56fbe68d122e42aa662d2292e0ffb35f42d0d47e78a843e4851055f24f332f74"
+}

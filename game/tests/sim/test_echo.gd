@@ -117,6 +117,17 @@ func test_echo_holds_a_plate_and_the_player_passes_the_gate() -> void:
 	assert_eq(through.player, Vector2i(3, 1))
 
 
+func test_two_plates_both_needed() -> void:
+	var one: SimState = H.step(H.state(["##########", "#P@.....P#", "#####H####", "##########"]), H.L).state
+	assert_false(one.gates_open, "one of two plates isn't enough")
+	var both: SimState = H.step(RuleEcho.spawned(H.state(["##########", "#P@.....P#", "#####H####", "##########"]),
+		Replay.parse_inputs("RRRRRR")), H.L).state
+	assert_false(both.gates_open, "the echo hasn't arrived yet")
+	for i: int in 5:
+		both = H.step(both).state
+	assert_true(both.gates_open, "the player on one plate and the echo on the other")
+
+
 func test_gate_wont_close_on_someone_standing_in_it() -> void:
 	var s: SimState = H.state(["#######", "#P@H..#", "#######"])
 	s.gates_open = true

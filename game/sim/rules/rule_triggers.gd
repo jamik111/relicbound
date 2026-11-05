@@ -14,9 +14,10 @@ static func apply(s: SimState, events: Array[SimEvent]) -> void:
 		events.append(SimEvent.make(SimEvent.Type.EXIT_OPENED, cell))
 
 
-## Gates are open while any plate is weighed down, and stay open while someone is standing in one.
+## Gates are open while every plate is weighed down, and stay open while someone is standing in one.
 static func _update_gates(s: SimState, events: Array[SimEvent]) -> void:
-	var weighed: bool = false
+	var plates: int = 0
+	var plates_held: int = 0
 	var gate_occupied: bool = false
 	for i: int in s.terrain.size():
 		var t: int = s.terrain[i]
@@ -27,10 +28,11 @@ static func _update_gates(s: SimState, events: Array[SimEvent]) -> void:
 		var occupied: bool = (obj == Tiles.Obj.BOULDER or obj == Tiles.Obj.CRATE or s.echo_at(c) != null
 			or (c == s.player and s.alive))
 		if t == Tiles.Terrain.PLATE:
-			weighed = weighed or occupied
+			plates += 1
+			plates_held += int(occupied)
 		else:
 			gate_occupied = gate_occupied or occupied
-	var open: bool = weighed or (s.gates_open and gate_occupied)
+	var open: bool = (plates > 0 and plates_held == plates) or (s.gates_open and gate_occupied)
 	if open != s.gates_open:
 		s.gates_open = open
 		events.append(SimEvent.make(SimEvent.Type.GATE_OPENED if open else SimEvent.Type.GATE_CLOSED, s.player))

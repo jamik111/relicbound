@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/greybox/level_01_hold_the_gate.json",
+	"note": "Walk to the plate, rewind; the echo holds the gate. Grab the first gem again on the way back, then go through.",
+	"inputs": "R.R.R.R.R.R.R.R.R. H R.R.R. L.L.L. D. .... D.D. R.R. R.R.R.R.R.R.R.R.",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 2
+	},
+	"hash": "c31079a890c40ca0e3e85980f70a2d6558a976d2bc59a85270178108a09348be"
+}

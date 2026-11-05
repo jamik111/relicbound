@@ -1,0 +1,29 @@
+{
+	"id": "level_02_one_way_bridge",
+	"size": [
+		12,
+		5
+	],
+	"meta": {
+		"name": "2: One-way bridge",
+		"gems_required": 1,
+		"seed": 1,
+		"hint": "The bridge holds only once. Send your past self across to push the boulder."
+	},
+	"layers": {
+		"terrain": [
+			"############",
+			"#....==...P#",
+			"#H##########",
+			"#.......E..#",
+			"############"
+		],
+		"objects": [
+			"............",
+			"..@......O..",
+			"............",
+			"...*........",
+			"............"
+		]
+	}
+}

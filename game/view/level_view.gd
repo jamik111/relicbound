@@ -54,6 +54,9 @@ const PLATE_ACTIVE_COLOR: Color = Color(1.0, 0.95, 0.4)
 const ECHO_COLOR: Color = Color(0.5, 1.0, 1.0, 0.8)
 ## An echo fades out over its last ticks, so you can see the plate is about to let go.
 const ECHO_FADE_TICKS: float = 20.0
+const DART_COLOR: Color = Color(1.0, 0.25, 0.15)
+const DART_FLASH_SECONDS: float = 0.15
+const DART_WARNING_SECONDS: float = 0.5
 const KEY_COLORS: Array[Color] = [
 	Color(0.90, 0.25, 0.22), Color(0.30, 0.50, 0.95), Color(0.95, 0.78, 0.25), Color(0.25, 0.78, 0.58),
 ]
@@ -244,8 +247,13 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 		_player_move_tick = cur.tick
 	var terrain_changed: bool = false
 	for e: Variant in events:
-		if (e as SimEvent).type in TERRAIN_EVENTS:
+		var ev: SimEvent = e as SimEvent
+		if ev.type in TERRAIN_EVENTS:
 			terrain_changed = true
+		elif ev.type == SimEvent.Type.DART_FIRED:
+			_flash_dart(ev.cell, ev.to)
+		elif ev.type == SimEvent.Type.DART_WARNING:
+			_flash_dart_warning(ev.cell)
 	if terrain_changed:
 		_build_terrain()
 	# Objects that are gone (collected) disappear; new ids (none yet in Sprint 2) appear.
@@ -435,6 +443,36 @@ func _tint(node: MultiMeshInstance3D, cells: PackedInt32Array, base: Color, play
 			base.r * (AMBIENT + glow * GLOW_COLOR.r),
 			base.g * (AMBIENT + glow * GLOW_COLOR.g),
 			base.b * (AMBIENT + glow * GLOW_COLOR.b)))
+
+
+# --- Dart telegraph and shot (the sim's hit is instant; this is what makes it readable) ---
+
+func _flash_dart(wall: Vector2i, stopped_at: Vector2i) -> void:
+	var from: Vector3 = cell_to_world(wall)
+	var to: Vector3 = cell_to_world(stopped_at)
+	var box := BoxMesh.new()
+	box.size = Vector3(absf(to.x - from.x), 0.07, 0.07)
+	var shot := MeshInstance3D.new()
+	shot.mesh = box
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = DART_COLOR
+	shot.material_override = mat
+	shot.position = (from + to) / 2.0 + Vector3(0.0, 0.4, 0.0)
+	add_child(shot)
+	_free_after(shot, DART_FLASH_SECONDS)
+
+
+func _flash_dart_warning(wall: Vector2i) -> void:
+	var label: Label3D = _make_label("!", DART_COLOR)
+	label.font_size = 96
+	label.position = cell_to_world(wall) + Vector3(0.0, 1.2, 0.0)
+	add_child(label)
+	_free_after(label, DART_WARNING_SECONDS)
+
+
+func _free_after(node: Node, seconds: float) -> void:
+	node.create_tween().tween_callback(node.queue_free).set_delay(seconds)
 
 
 # --- Echoes -------------------------------------------------------------------

@@ -47,8 +47,8 @@ yourself: this is what makes Relicbound more than another boulder puzzler.
 - **Lifetime:** after its replay it holds still for 5 s, then fades. A boulder or crate landing on it, a dart, a pit or
   risen spikes destroy it, so it can take a hit for you.
 - **Limit:** 3 hourglass uses per level; each one leaves an echo, so up to 3 can overlap.
-- **Pressure plates and gates:** gates are open only while a plate is weighed down (player, echo, boulder or crate), and
-  won't close on someone standing in one.
+- **Pressure plates and gates:** gates are open only while every plate in the level is weighed down (player, echo, boulder
+  or crate), and won't close on someone standing in one.
 - **Not proven yet:** the numbers (3 s back, 5 s hold) are starting values to tune in playtests.
 
 ## Core tiles & objects
