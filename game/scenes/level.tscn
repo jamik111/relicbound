@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/level.gd" id="1_level"]
 [ext_resource type="Script" path="res://view/level_view.gd" id="2_view"]
 [ext_resource type="Script" path="res://view/follow_camera.gd" id="3_cam"]
+[ext_resource type="Script" path="res://ui/touch_controls.gd" id="4_touch"]
 
 [node name="Level" type="Node3D"]
 script = ExtResource("1_level")
@@ -15,6 +16,15 @@ current = true
 script = ExtResource("3_cam")
 
 [node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TouchControls" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_touch")
 
 [node name="GemsLabel" type="Label" parent="HUD"]
 unique_name_in_owner = true
@@ -39,12 +49,20 @@ horizontal_alignment = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -340.0
+offset_left = -502.0
 offset_top = 12.0
 offset_right = -16.0
 offset_bottom = 84.0
 grow_horizontal = 0
 theme_override_constants/separation = 12
+
+[node name="ControlsButton" type="Button" parent="HUD/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "Swipe"
 
 [node name="RestartButton" type="Button" parent="HUD/Buttons"]
 unique_name_in_owner = true
