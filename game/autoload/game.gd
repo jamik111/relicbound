@@ -42,6 +42,9 @@ var _move_cooldown: int = 0
 var _history := RewindBuffer.new(REWIND_TICKS)
 ## State saved when the last checkpoint idol was lit (or the level start). Respawn restores it.
 var _checkpoint: SimState
+## Hourglass uses when that state was saved. Dying gives them back: the echoes they made are gone too,
+## and a room that needs an echo would otherwise become unwinnable.
+var _checkpoint_rewinds: int = REWIND_CHARGES
 ## An idol was lit but the room isn't settled yet: save as soon as nothing is moving.
 var _checkpoint_pending: bool = false
 ## Counts down after a crush; < 0 when no respawn is pending.
@@ -70,6 +73,7 @@ func load_level(path: String) -> bool:
 	_held.clear()
 	_history.clear()
 	_checkpoint = s
+	_checkpoint_rewinds = REWIND_CHARGES
 	_checkpoint_pending = false
 	_move_cooldown = 0
 	_respawn_timer = -1.0
@@ -101,9 +105,10 @@ func rewind() -> bool:
 	return true
 
 
-## Restores the last checkpoint snapshot (or the level start). Rewind charges are not refilled.
+## Restores the last checkpoint snapshot (or the level start), with the hourglass uses it had.
 func respawn() -> void:
 	_history.clear()
+	rewinds_left = _checkpoint_rewinds
 	_replace_state(_checkpoint)
 	Events.respawned.emit()
 
@@ -184,6 +189,7 @@ func _advance() -> void:
 			_checkpoint_pending = false
 	if _checkpoint_pending and _room_is_settled(state):
 		_checkpoint = state
+		_checkpoint_rewinds = rewinds_left
 		_checkpoint_pending = false
 		Events.checkpoint_saved.emit()
 	Events.sim_events.emit(state.tick, result.events)

@@ -119,6 +119,32 @@ func test_death_cancels_a_waiting_checkpoint() -> void:
 	assert_eq(Game._checkpoint, start, "respawn goes back to the level start")
 
 
+func test_dying_gives_back_the_uses_from_the_level_start() -> void:
+	_load(["#######", "#@....#", "#######"])
+	_ticks(2)
+	assert_true(Game.rewind())
+	_ticks(2)
+	assert_true(Game.rewind())
+	assert_eq(Game.rewinds_left, Game.REWIND_CHARGES - 2)
+	Game.respawn()
+	assert_eq(Game.rewinds_left, Game.REWIND_CHARGES)
+	assert_eq(Game.state.echoes.size(), 0, "the echoes they made are gone too")
+
+
+func test_dying_gives_back_only_the_uses_held_at_the_checkpoint() -> void:
+	_load(["#######", "#.@I..#", "#######"])
+	_ticks(2)
+	assert_true(Game.rewind())
+	var spent: int = Game.rewinds_left
+	_ticks(RuleEcho.LINGER_TICKS + 3)  # the echo fades, so the room can settle and save
+	_ticks(1, SimStep.Intent.RIGHT)
+	assert_eq(Game._checkpoint, Game.state, "saved on the idol")
+	_ticks(2)
+	assert_true(Game.rewind())
+	Game.respawn()
+	assert_eq(Game.rewinds_left, spent)
+
+
 func test_crush_schedules_respawn() -> void:
 	_load(["###", "#O#", "#.#", "#@#", "###"])
 	_ticks(2)

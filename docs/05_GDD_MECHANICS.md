@@ -30,7 +30,8 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
   moving, so a respawn can't drop a boulder on you. Idols are safe spots: objects can't enter them, nothing falls on
   a player standing on one, and they stop darts. 1.0 s after dying, the player respawns into the last save (or the level start).
 - **Hourglass:** one use jumps back up to 30 ticks (3 s), even mid-fall or after being crushed, and leaves an echo. 3 uses per level;
-  respawning doesn't refill them.
+  dying gives back the uses you had at your last checkpoint (the echoes they made are gone, and a room needing an echo
+  would otherwise become unwinnable).
 - **Hazard timing** (all derived from the tick, 10 ticks/s): spikes cycle every 3 s (2 s down, 0.5 s warning, 0.5 s up),
   with a second phase half a cycle later; dart walls fire every 3 s after a 0.5 s warning, along their row until a
   solid tile or any object. Cracked floor collapses at the start of the tick after you step off. A boulder, crate
