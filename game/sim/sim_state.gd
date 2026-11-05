@@ -89,6 +89,38 @@ func copy() -> SimState:
 	return s
 
 
+## For the save file. Only for a settled state in a level with no enemies: echoes and enemies aren't stored.
+func to_dict() -> Dictionary:
+	return {
+		"terrain": Array(terrain), "objects": Array(objects), "flags": Array(flags), "ids": Array(ids),
+		"next_id": next_id, "player": [player.x, player.y], "facing": [facing.x, facing.y],
+		"gems_collected": gems_collected, "exit_open": exit_open, "keys": Array(keys), "tick": tick,
+		"rng_state": rng_state, "gates_open": gates_open, "scars": Array(scars),
+	}
+
+
+## This state (a fresh level start) with a saved one laid over it, or null if the save doesn't fit the level.
+func restored(d: Dictionary) -> SimState:
+	if (d.get("terrain", []) as Array).size() != terrain.size():
+		return null
+	var s: SimState = copy()
+	s.terrain = PackedInt32Array(d["terrain"] as Array)
+	s.objects = PackedInt32Array(d["objects"] as Array)
+	s.flags = PackedByteArray(d["flags"] as Array)
+	s.ids = PackedInt32Array(d["ids"] as Array)
+	s.next_id = int(d["next_id"])
+	s.player = Vector2i(int(d["player"][0]), int(d["player"][1]))
+	s.facing = Vector2i(int(d["facing"][0]), int(d["facing"][1]))
+	s.gems_collected = int(d["gems_collected"])
+	s.exit_open = bool(d["exit_open"])
+	s.keys = PackedInt32Array(d["keys"] as Array)
+	s.tick = int(d["tick"])
+	s.rng_state = int(d["rng_state"])
+	s.gates_open = bool(d["gates_open"])
+	s.scars = PackedInt32Array(d["scars"] as Array)
+	return s
+
+
 # --- Cells -------------------------------------------------------------------
 
 func in_bounds(c: Vector2i) -> bool:

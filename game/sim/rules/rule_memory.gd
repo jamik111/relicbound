@@ -4,7 +4,7 @@ extends RefCounted
 ## - A scar, a solid statue, stands on the cell where you died. It blocks you, echoes and falling objects,
 ##   stops darts and holds down a plate, so the exact same attempt can't happen twice.
 ## - A remnant, a ghost of your failed attempt, replays it from the moment you respawn: it pushes what you
-##   pushed and stands where you stood.
+##   pushed and stands where you stood, but it has no weight, so it can't hold a plate.
 ## Only MAX_SCARS scars last, oldest gone first. They're saved, so restarting or leaving the level keeps them.
 ## Winning clears them, and so does spending a Forget (Game.forget): that's the way out if your scars have closed
 ## off the room.

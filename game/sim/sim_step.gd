@@ -9,6 +9,18 @@ enum Intent { NONE = 0, UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4 }
 const DIRECTIONS: Array[Vector2i] = [Vector2i.ZERO, Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 
 
+## Settled = no echoes, and one idle tick later nothing has moved and the player is still alive, so respawning into this
+## state can't drop anything on the player. Trial-steps the sim instead of duplicating its rules.
+static func is_settled(s: SimState) -> bool:
+	var trial: StepResult = step(s, Intent.NONE)
+	if not trial.state.alive or not s.echoes.is_empty():
+		return false
+	for e: SimEvent in trial.events:
+		if e.type in [SimEvent.Type.OBJECT_FELL, SimEvent.Type.OBJECT_ROLLED, SimEvent.Type.OBJECT_LANDED]:
+			return false
+	return true
+
+
 static func step(state: SimState, intent: Intent) -> StepResult:
 	var s: SimState = state.copy()
 	var events: Array[SimEvent] = []

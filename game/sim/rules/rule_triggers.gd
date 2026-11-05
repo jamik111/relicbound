@@ -14,6 +14,14 @@ static func apply(s: SimState, events: Array[SimEvent]) -> void:
 		events.append(SimEvent.make(SimEvent.Type.EXIT_OPENED, cell))
 
 
+## A remnant has no weight (playtest 3: one holding a plate turned level 7 into a timed run instead of a puzzle).
+static func _echo_weighs_on(s: SimState, c: Vector2i) -> bool:
+	for e: SimEcho in s.echoes:
+		if e.cell == c and not e.remnant:
+			return true
+	return false
+
+
 ## Gates are open while every plate is weighed down, and stay open while someone is standing in one.
 static func _update_gates(s: SimState, events: Array[SimEvent]) -> void:
 	var plates: int = 0
@@ -25,8 +33,8 @@ static func _update_gates(s: SimState, events: Array[SimEvent]) -> void:
 			continue
 		var c := Vector2i(i % s.width, i / s.width)
 		var obj: int = s.objects[i]
-		var occupied: bool = (obj == Tiles.Obj.BOULDER or obj == Tiles.Obj.CRATE or obj == Tiles.Obj.SCAR or s.echo_at(c) != null
-			or (c == s.player and s.alive))
+		var occupied: bool = (obj == Tiles.Obj.BOULDER or obj == Tiles.Obj.CRATE or obj == Tiles.Obj.SCAR
+			or _echo_weighs_on(s, c) or (c == s.player and s.alive))
 		if t == Tiles.Terrain.PLATE:
 			plates += 1
 			plates_held += int(occupied)

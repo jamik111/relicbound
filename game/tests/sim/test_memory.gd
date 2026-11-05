@@ -5,7 +5,10 @@ const H = preload("res://tests/sim/sim_helpers.gd")
 const LEVEL_7: String = "res://levels/greybox/level_07_where_you_fall.json"
 const NEAR_PLATE := Vector2i(5, 1)
 const FAR_PLATE := Vector2i(9, 1)
-const JUNCTION := Vector2i(3, 1)
+const LEVEL_8: String = "res://levels/greybox/level_08_before_you_fall.json"
+const NEAR_PLATE_8 := Vector2i(1, 4)
+const FAR_PLATE_8 := Vector2i(8, 2)
+const IDOL_8 := Vector2i(6, 1)
 
 
 func _remembering(rows: PackedStringArray) -> SimState:
@@ -115,25 +118,28 @@ func test_codec_reads_the_level_options() -> void:
 # A search over every input from a given set of scars. It ignores the walking speed, so it allows more than a person
 # can do. It leaves out remnants, so it says nothing about routes that use one to hold a plate for a moment.
 
-## Returns {won: bool, deaths: {cell: true}} for everything reachable without dying.
+## Returns {won: bool, gem: bool, deaths: {cell: true}} for everything reachable without dying.
 func _explore(start: SimState) -> Dictionary:
 	var seen: Dictionary = {}
 	var deaths: Dictionary = {}
+	var gem: bool = false
 	var queue: Array[SimState] = [start]
 	while not queue.is_empty():
 		var s: SimState = queue.pop_back()
 		for intent: int in SimStep.DIRECTIONS.size():
 			var next: SimState = SimStep.step(s, intent as SimStep.Intent).state
+			gem = gem or next.gems_collected > start.gems_collected
 			if next.won:
-				return {"won": true, "deaths": deaths}
+				return {"won": true, "gem": gem, "deaths": deaths}
 			if not next.alive:
 				deaths[next.player] = true
 				continue
-			var key: Array = [next.player, next.tick % RuleHazards.DART_PERIOD, next.gems_collected, next.gates_open]
+			var key: Array = [next.player, next.tick % RuleHazards.DART_PERIOD, next.gems_collected, next.gates_open,
+				hash(next.terrain)]
 			if not seen.has(key):
 				seen[key] = true
 				queue.append(next)
-	return {"won": false, "deaths": deaths}
+	return {"won": false, "gem": gem, "deaths": deaths}
 
 
 func test_level_7_cant_be_won_without_dying() -> void:
@@ -148,15 +154,66 @@ func test_level_7_cant_be_won_with_any_single_scar() -> void:
 		assert_false(_explore(RuleMemory.scarred(start, cell))["won"], "scar at %s" % cell)
 
 
-## A second route the search can't see: a scar one cell past the near plate stops the next remnant on that plate, and
-## it holds the gate open until the dart destroys it. Still two deaths, far plate first.
-func test_level_7_can_also_be_won_with_a_remnant_holding_the_near_plate() -> void:
+## Playtest 3 won by running through the gate while a remnant stood on the near plate: reflexes, not the puzzle.
+func test_level_7_a_remnant_on_the_near_plate_doesnt_open_the_gate() -> void:
 	var far: String = "R.U.U.R.R.R.R.R.R." + ".".repeat(12)
 	var past_near: String = "R.U.U.R.R.R." + ".".repeat(18)
 	var run: String = "R.R.R.R.R.R.R.R.R.R.R.R."
 	var s: SimState = Replay.run(LevelLoader.load_state(LEVEL_7), far + "X" + past_near + "X" + run)
+	assert_false(s.won)
+	assert_eq(s.player, Vector2i(9, 3), "stopped at the shut gate")
+
+
+func test_remnant_has_no_weight_but_an_echo_does() -> void:
+	var s: SimState = _remembering(["#####", "#@P.#", "##H##", "#####"])
+	var inputs := PackedInt32Array([SimStep.Intent.RIGHT])
+	assert_false(H.run(RuleMemory.with_remnant(s, inputs), "..").gates_open)
+	assert_true(H.run(RuleEcho.spawned(s, inputs), "..").gates_open)
+
+
+# --- Level 8: the order is gem, idol, die on the far plate, echo on the near plate ---
+
+func _level_8() -> SimState:
+	return LevelLoader.load_state(LEVEL_8)
+
+
+func test_level_8_cant_be_won_without_dying() -> void:
+	assert_false(_explore(_level_8())["won"])
+
+
+func test_level_8_has_one_hourglass_use_so_one_echo_cant_hold_both_plates() -> void:
+	assert_eq(_level_8().hourglass_uses, 1)
+
+
+func test_level_8_the_near_plate_cant_take_a_scar() -> void:
+	assert_false(_explore(_level_8())["deaths"].has(NEAR_PLATE_8))
+
+
+func test_level_8_dying_on_the_far_plate_too_soon_walls_off_the_gem() -> void:
+	var scarred: SimState = RuleMemory.scarred(_level_8(), FAR_PLATE_8)
+	assert_false(_explore(scarred)["gem"], "the scar stands between you and the gem")
+
+
+func test_level_8_lighting_the_idol_before_the_gem_loses_the_gem() -> void:
+	var inputs: String = "R.R.R.U.U.U."  # straight to the idol
+	var s: SimState = Replay.run(_level_8(), inputs + "D.R.R.R.L.." + ".".repeat(30) + "X")
+	assert_eq(s.terrain_at(IDOL_8), Tiles.Terrain.CHECKPOINT_LIT)
+	assert_eq(s.gems_collected, 0, "the save was made without it")
+	assert_false(_explore(s)["gem"])
+
+
+func test_level_8_gem_then_idol_keeps_the_gem() -> void:
+	var s: SimState = Replay.run(_level_8(), "R.R.R.U.U.R.R.R.L.L.L.U.. D.R.R.. X")
+	assert_eq(s.player, IDOL_8)
+	assert_eq(s.gems_collected, 1)
+	assert_eq(s.object_at(FAR_PLATE_8), Tiles.Obj.SCAR)
+
+
+func test_level_8_the_echo_gives_time_to_walk() -> void:
+	# The solution with a pause before the gate: no run needed.
+	var setup: String = "R.R.R.U.U.R.R.R.L.L.L.U.. D.R.R.. X D.D.D.L.L.L.L.L. H"
+	var s: SimState = Replay.run(_level_8(), setup + "D.D.D.R.R.R.R.R.R." + ".".repeat(20) + "R.R.R.")
 	assert_true(s.won)
-	assert_eq(s.scars.size(), 2)
 
 
 func test_saved_scars_go_back_in_order_and_skip_cells_that_dont_fit() -> void:

@@ -215,6 +215,77 @@ func test_scars_survive_closing_the_game() -> void:
 	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.SCAR)
 
 
+## Gem at x=2, idol at x=3, pit at x=5.
+func _take_gem_light_idol_and_die() -> void:
+	_load(["#######", "#@*I._#", "#######"], {"gems_required": 2, "remembers": true})
+	_ticks(2, SimStep.Intent.RIGHT)
+	assert_eq(Game.state.gems_collected, 1)
+	assert_eq(Game.state.terrain_at(Vector2i(3, 1)), Tiles.Terrain.CHECKPOINT_LIT)
+	_ticks(2, SimStep.Intent.RIGHT)
+	assert_false(Game.state.alive)
+	Game.respawn()
+
+
+func _assert_back_at_the_idol() -> void:
+	assert_eq(Game.state.player, Vector2i(3, 1))
+	assert_eq(Game.state.gems_collected, 1, "what the idol kept is still kept")
+	assert_eq(Game.state.terrain_at(Vector2i(3, 1)), Tiles.Terrain.CHECKPOINT_LIT)
+	assert_eq(Game.state.object_at(Vector2i(5, 1)), Tiles.Obj.SCAR)
+	assert_eq(Game.state.scars.size(), 1)
+	assert_eq(Game.state.hourglass_uses, Game.REWIND_CHARGES)
+
+
+func test_restart_goes_back_to_the_idol_in_a_remembering_level() -> void:
+	_take_gem_light_idol_and_die()
+	Game.restart()
+	Game.stop()
+	_assert_back_at_the_idol()
+
+
+func test_idol_progress_survives_closing_the_game() -> void:
+	_take_gem_light_idol_and_die()
+	Save.load_save()  # what the next launch reads from disk
+	assert_true(Game.load_level(PATH))
+	Game.stop()
+	_assert_back_at_the_idol()
+	assert_eq(Game.state.hash(), Game._checkpoint.hash())
+
+
+func test_idol_save_keeps_the_hourglass_uses_left() -> void:
+	_load(["#########", "#@..I...#", "#########"], {"gems_required": 0, "remembers": true})
+	_ticks(2, SimStep.Intent.RIGHT)
+	assert_true(Game.rewind())
+	_ticks(3, SimStep.Intent.RIGHT)
+	_ticks(RuleEcho.LINGER_TICKS + 5)  # an idol only saves once nothing is moving, and that includes echoes
+	assert_false(Save.idol_save_of(PATH).is_empty())
+	assert_eq(Game.rewinds_left, Game.REWIND_CHARGES - 1)
+	Save.load_save()
+	assert_true(Game.load_level(PATH))
+	Game.stop()
+	assert_eq(Game.rewinds_left, Game.REWIND_CHARGES - 1)
+
+
+func test_forget_also_wipes_the_idol_save() -> void:
+	_take_gem_light_idol_and_die()
+	assert_true(Game.forget())
+	Game.stop()
+	assert_eq(Game.state.player, Vector2i(1, 1))
+	assert_eq(Game.state.gems_collected, 0)
+	assert_true(Save.idol_save_of(PATH).is_empty())
+
+
+func test_a_save_that_doesnt_fit_the_level_is_ignored() -> void:
+	var s: SimState = H.state(["###", "#@#", "###"])
+	assert_null(s.restored({}))
+	assert_null(s.restored({"terrain": [0, 0]}))
+
+
+func test_clean_levels_dont_save_idols() -> void:
+	_load(["#####", "#@I.#", "#####"])
+	_ticks(1, SimStep.Intent.RIGHT)
+	assert_true(Save.idol_save_of(PATH).is_empty())
+
+
 func test_rewound_death_saves_no_scar() -> void:
 	_die_in_the_pit()
 	assert_true(Game.rewind())
