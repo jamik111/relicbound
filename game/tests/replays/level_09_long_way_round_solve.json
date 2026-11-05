@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/greybox/level_09_long_way_round.json",
+	"note": "The long corridor can't be crossed between darts, so first die just west of the junction: the scar shields the whole corridor. Then take the gem, light the idol and die on the upper plate. From the idol, step onto the lower plate, use the hourglass, and walk back along the corridor to the gate while the echo holds it.",
+	"inputs": "R.R.U.U.L. .................... X R.R.U.U. R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R. U.U. L.L.L.L. R.R.R. D. . U.L. .......................... X D H D. L.L.L.L.L.L.L.L.L.L.L.L.L.L.L. D.D.R.R.R.",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 1
+	},
+	"hash": "d13c0e475c71ca15008430ed11328122db989aca2faa3b030e1eae5b8ed52379"
+}
