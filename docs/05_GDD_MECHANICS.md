@@ -123,6 +123,8 @@ cells. Bats move slower than walking. Enemies kill on touch, except on an idol. 
 6. **Reward:** exit. A secret branch is hidden in step 3 or 4.
 
 ## Difficulty & fairness rules
+- **Logic before looks (playtest 1):** the wow has to come from what you figure out. Early levels teach one idea each;
+  later ones make you plan 2–3 steps ahead, and the order of your actions is the puzzle.
 - Everything that can kill you telegraphs for ≥ 0.4 s, or is visible before it becomes a threat.
 - No "leap of faith" off-screen. The camera always shows the tiles you could move to.
 - No unwinnable state without an obvious signal. When the sim detects that the exit gems can't be reached, a

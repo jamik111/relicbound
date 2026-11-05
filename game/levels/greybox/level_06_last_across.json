@@ -1,0 +1,29 @@
+{
+	"id": "level_06_last_across",
+	"size": [
+		17,
+		5
+	],
+	"meta": {
+		"name": "6: Last across",
+		"gems_required": 1,
+		"seed": 1,
+		"hint": "Two plates, one gate, a bridge that holds once. Plan the order before you walk."
+	},
+	"layers": {
+		"terrain": [
+			"#################",
+			"#P........==...P#",
+			"############H####",
+			"#.......E.......#",
+			"#################"
+		],
+		"objects": [
+			".................",
+			"......@......*O..",
+			".................",
+			".................",
+			"................."
+		]
+	}
+}
