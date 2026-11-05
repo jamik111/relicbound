@@ -52,6 +52,11 @@ const GEM_SPIN_SPEED: float = 2.5
 const GEM_BOB_HEIGHT: float = 0.06
 const PLATE_ACTIVE_COLOR: Color = Color(1.0, 0.95, 0.4)
 const ECHO_COLOR: Color = Color(0.5, 1.0, 1.0, 0.8)
+const VIPER_PATH_COLOR: Color = Color(0.55, 0.95, 0.2)
+const BAT_PATH_COLOR: Color = Color(0.8, 0.45, 1.0)
+const VIPER_SCALE: float = 1.5
+const BAT_SCALE: float = 1.4
+const PATH_DOT_HEIGHT: float = 0.02
 ## An echo fades out over its last ticks, so you can see the plate is about to let go.
 const ECHO_FADE_TICKS: float = 20.0
 const DART_COLOR: Color = Color(1.0, 0.25, 0.15)
@@ -90,6 +95,8 @@ var _player_move_tick: int = 0
 var _echo_views: Dictionary = {}
 ## enemy id -> {node, from, to, tick}
 var _enemy_views: Dictionary = {}
+## Dots showing where enemies go, so they read as patterns rather than chance. One draw call.
+var _enemy_path_dots: MultiMeshInstance3D
 
 
 func _ready() -> void:
@@ -149,6 +156,9 @@ static func _build_meshes() -> Dictionary:
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.0, 0.25, 0.0), Color.WHITE, 6),
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(-0.25, 0.25, 0.25), Color.WHITE, 6),
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.25, 0.25, 0.25), Color.WHITE, 6),
+		] as Array[Dictionary]),
+		&"path_dot": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_cyl(0.09, 0.09, 0.02, Vector3.ZERO, Color.WHITE, 8),
 		] as Array[Dictionary]),
 		&"viper": GreyboxMeshes.assemble([
 			GreyboxMeshes.part_box(Vector3(0.2, 0.14, 0.26), Vector3(0.0, 0.07, -0.26), Color(0.75, 0.85, 0.2)),
@@ -233,6 +243,7 @@ func build(state: SimState) -> void:
 	_labels.clear()
 	_echo_views.clear()
 	_enemy_views.clear()
+	_enemy_path_dots = null
 	_floor = null
 	_prev = state
 	_cur = state
@@ -516,6 +527,7 @@ func _sync_enemies() -> void:
 			node.mesh = _meshes[&"bat" if e.kind == SimEnemy.Kind.BAT else &"viper"]
 			node.material_override = GreyboxMeshes.material(Color.WHITE)
 			node.position = _enemy_world(e)
+			node.scale = Vector3.ONE * (BAT_SCALE if e.kind == SimEnemy.Kind.BAT else VIPER_SCALE)
 			add_child(node)
 			_enemy_views[e.id] = {"node": node, "from": node.position, "to": e.cell, "tick": _cur.tick - 100}
 		var view: Dictionary = _enemy_views[e.id]
@@ -527,6 +539,34 @@ func _sync_enemies() -> void:
 		if not alive_ids.has(id):
 			((_enemy_views[id] as Dictionary)["node"] as Node).queue_free()
 			_enemy_views.erase(id)
+	_show_enemy_paths()
+
+
+func _show_enemy_paths() -> void:
+	var cells: Array[Vector2i] = []
+	var colors: Array[Color] = []
+	for e: SimEnemy in _cur.enemies:
+		var bat: bool = e.kind == SimEnemy.Kind.BAT
+		var path: Array[Vector2i] = RuleEnemies.bat_path(_cur, e, RuleEnemies.BAT_PATH_PREVIEW) if bat else RuleEnemies.patrol_cells(_cur, e)
+		for c: Vector2i in path:
+			cells.append(c)
+			colors.append(BAT_PATH_COLOR if bat else VIPER_PATH_COLOR)
+	if _enemy_path_dots == null:
+		if cells.is_empty():
+			return
+		_enemy_path_dots = MultiMeshInstance3D.new()
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = _meshes[&"path_dot"]
+		_enemy_path_dots.multimesh = mm
+		_enemy_path_dots.material_override = GreyboxMeshes.material(Color.WHITE)
+		add_child(_enemy_path_dots)
+	var dots: MultiMesh = _enemy_path_dots.multimesh
+	dots.instance_count = cells.size()
+	for i: int in cells.size():
+		dots.set_instance_transform(i, Transform3D(Basis(), cell_to_world(cells[i]) + Vector3(0.0, PATH_DOT_HEIGHT, 0.0)))
+		dots.set_instance_color(i, colors[i])
 
 
 # --- Echoes -------------------------------------------------------------------
