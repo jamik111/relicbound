@@ -29,7 +29,7 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
 - **Checkpoint idol:** lights when the player steps on it (stays lit). The room is saved only once nothing in it is
   moving, so a respawn can't drop a boulder on you. Idols are safe spots: objects can't enter them, nothing falls on
   a player standing on one, and they stop darts. 1.0 s after dying, the player respawns into the last save (or the level start).
-- **Hourglass:** one use jumps back up to 30 ticks (3 s), even mid-fall or after being crushed, and leaves an echo. 3 uses per level;
+- **Hourglass:** one use jumps back up to 30 ticks (3 s) before the last move, even mid-fall or after being crushed, and leaves an echo. 3 uses per level;
   dying gives back the uses you had at your last checkpoint (the echoes they made are gone, and a room needing an echo
   would otherwise become unwinnable).
 - **Hazard timing** (all derived from the tick, 10 ticks/s): spikes cycle every 3 s (2 s down, 0.5 s warning, 0.5 s up),
@@ -39,7 +39,7 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
 
 ## Echoes: the signature mechanic (prototype, chosen after playtest 1)
 **Rewinding doesn't erase what you did. Your past self keeps doing it.** Using the hourglass jumps time back up to
-3 seconds, and your earlier self replays those exact inputs as a ghost while you act freely. You cooperate with
+3 seconds before your last move, and your earlier self replays those exact inputs as a ghost while you act freely. You cooperate with
 yourself: this is what makes Relicbound more than another boulder puzzler.
 - **An echo can:** walk, push boulders and crates, dig dirt, weigh down pressure plates.
 - **An echo can't:** take gems or keys (it passes through them), open keyed doors or the exit, light idols, or hold
@@ -50,6 +50,8 @@ yourself: this is what makes Relicbound more than another boulder puzzler.
 - **Limit:** 3 hourglass uses per level; each one leaves an echo, so up to 3 can overlap.
 - **Pressure plates and gates:** gates are open only while every plate in the level is weighed down (player, echo, boulder
   or crate), and won't close on someone standing in one.
+- **Thinking is free:** time spent standing still doesn't count, so you can stop and plan before tapping (found in
+  playtest: pausing 3 s used to leave a ghost with nothing to replay). History lasts 60 s of standing still.
 - **Not proven yet:** the numbers (3 s back, 5 s hold) are starting values to tune in playtests.
 
 ## Core tiles & objects

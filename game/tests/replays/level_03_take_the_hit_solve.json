@@ -1,7 +1,7 @@
 {
 	"level": "res://levels/greybox/level_03_take_the_hit.json",
 	"note": "Enter just after a shot, step in, rewind. The echo stands in the line of fire while you run past it.",
-	"inputs": ".............................. U. R. H .......................... U. R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.",
+	"inputs": ".............................. U. R. H ........................... U. R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.R.",
 	"expect": {
 		"won": true,
 		"alive": true,

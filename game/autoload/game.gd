@@ -5,7 +5,7 @@ extends Node
 
 const TICK_RATE_HZ: int = 10
 const ASSIST_TICK_RATE_HZ: int = 6
-## Hourglass: how far back one use reaches (ticks) and uses per level (GDD/roadmap 2.4).
+## Hourglass: how far back from the last move one use reaches (ticks), and uses per level (GDD/roadmap 2.4).
 const REWIND_TICKS: int = 30
 const REWIND_CHARGES: int = 3
 ## Seconds from being crushed to respawning at the last lit checkpoint (roadmap 2.3: <= 1.2 s).
