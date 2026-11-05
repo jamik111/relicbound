@@ -22,12 +22,25 @@ const TERRAIN_COLORS: Dictionary = {
 	Tiles.Terrain.EXIT: Color(0.25, 0.22, 0.18),
 	Tiles.Terrain.CHECKPOINT: Color(0.35, 0.38, 0.33),
 	Tiles.Terrain.CHECKPOINT_LIT: Color(0.35, 1.0, 0.70),
+	Tiles.Terrain.PIT: Color(0.05, 0.04, 0.04),
+	Tiles.Terrain.CRACKED: Color(0.62, 0.55, 0.42),
+	Tiles.Terrain.CRACKED_COLLAPSING: Color(0.85, 0.35, 0.20),
+	Tiles.Terrain.SPIKES_A: Color(0.40, 0.40, 0.42),
+	Tiles.Terrain.SPIKES_B: Color(0.40, 0.40, 0.42),
+	Tiles.Terrain.DART_EAST: Color(0.55, 0.30, 0.45),
+	Tiles.Terrain.DART_WEST: Color(0.55, 0.30, 0.45),
 	Tiles.Terrain.DOOR_RED: Color(0.80, 0.22, 0.20),
 	Tiles.Terrain.DOOR_BLUE: Color(0.22, 0.42, 0.85),
 	Tiles.Terrain.DOOR_GOLD: Color(0.90, 0.72, 0.20),
 	Tiles.Terrain.DOOR_JADE: Color(0.20, 0.68, 0.52),
 }
 const EXIT_OPEN_COLOR: Color = Color(1.0, 0.85, 0.35)
+## Events after which the terrain MultiMeshes are rebuilt.
+const TERRAIN_EVENTS: Array[SimEvent.Type] = [
+	SimEvent.Type.DIRT_DUG, SimEvent.Type.DOOR_OPENED, SimEvent.Type.EXIT_OPENED, SimEvent.Type.CHECKPOINT_LIT,
+	SimEvent.Type.PIT_FILLED, SimEvent.Type.FLOOR_CRACKING, SimEvent.Type.FLOOR_COLLAPSED,
+]
+const SPIKE_COLORS: Array[Color] = [Color(0.40, 0.40, 0.42), Color(0.95, 0.60, 0.15), Color(0.95, 0.20, 0.15)]
 const KEY_COLORS: Array[Color] = [
 	Color(0.90, 0.25, 0.22), Color(0.30, 0.50, 0.95), Color(0.95, 0.78, 0.25), Color(0.25, 0.78, 0.58),
 ]
@@ -59,6 +72,8 @@ func _ready() -> void:
 		&"door": GreyboxMeshes.box(Vector3(0.9, 0.9, 0.9)),
 		&"exit": GreyboxMeshes.box(Vector3(0.9, 0.12, 0.9)),
 		&"idol": GreyboxMeshes.box(Vector3(0.35, 0.75, 0.35)),
+		&"pit": GreyboxMeshes.box(Vector3(1.0, 0.02, 1.0)),
+		&"spikes": GreyboxMeshes.box(Vector3(0.8, 0.18, 0.8)),
 		&"boulder": GreyboxMeshes.ball(0.44),
 		&"crate": GreyboxMeshes.box(Vector3(0.8, 0.8, 0.8)),
 		&"gem": GreyboxMeshes.gem(0.3),
@@ -98,10 +113,8 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 	_cur_cells = _object_cells(cur)
 	var terrain_changed: bool = false
 	for e: Variant in events:
-		var ev: SimEvent = e as SimEvent
-		match ev.type:
-			SimEvent.Type.DIRT_DUG, SimEvent.Type.DOOR_OPENED, SimEvent.Type.EXIT_OPENED, 					SimEvent.Type.CHECKPOINT_LIT:
-				terrain_changed = true
+		if (e as SimEvent).type in TERRAIN_EVENTS:
+			terrain_changed = true
 	if terrain_changed:
 		_build_terrain()
 	# Objects that are gone (collected) disappear; new ids (none yet in Sprint 2) appear.
@@ -149,7 +162,7 @@ func _build_terrain() -> void:
 	var s: SimState = _cur
 	for i: int in s.terrain.size():
 		var t: int = s.terrain[i]
-		if t != Tiles.Terrain.WALL and t != Tiles.Terrain.ANCIENT_WALL:
+		if not _is_solid_block(t) and t != Tiles.Terrain.PIT:
 			_floor_cells.append(i)
 		if t == Tiles.Terrain.FLOOR:
 			continue
@@ -164,8 +177,14 @@ func _build_terrain() -> void:
 
 
 func _terrain_mesh_key(t: int) -> StringName:
-	if t == Tiles.Terrain.WALL or t == Tiles.Terrain.ANCIENT_WALL:
+	if _is_solid_block(t):
 		return &"wall"
+	if t == Tiles.Terrain.PIT:
+		return &"pit"
+	if Tiles.is_spikes(t):
+		return &"spikes"
+	if t == Tiles.Terrain.CRACKED or t == Tiles.Terrain.CRACKED_COLLAPSING:
+		return &"exit"
 	if t == Tiles.Terrain.DIRT:
 		return &"dirt"
 	if t == Tiles.Terrain.EXIT:
@@ -173,6 +192,12 @@ func _terrain_mesh_key(t: int) -> StringName:
 	if t == Tiles.Terrain.CHECKPOINT or t == Tiles.Terrain.CHECKPOINT_LIT:
 		return &"idol"
 	return &"door"
+
+
+## Full-height blocks with no floor slab under them.
+static func _is_solid_block(t: int) -> bool:
+	return (t == Tiles.Terrain.WALL or t == Tiles.Terrain.ANCIENT_WALL
+		or t == Tiles.Terrain.DART_EAST or t == Tiles.Terrain.DART_WEST)
 
 
 func _make_multimesh(mesh: Mesh, cells: PackedInt32Array, y: float) -> MultiMeshInstance3D:
@@ -199,6 +224,8 @@ func _apply_light() -> void:
 		var base: Color = TERRAIN_COLORS[t]
 		if t == Tiles.Terrain.EXIT and _cur.exit_open:
 			base = EXIT_OPEN_COLOR
+		elif Tiles.is_spikes(t):
+			base = SPIKE_COLORS[RuleHazards.spike_phase(_cur.tick, t)]
 		_tint(_terrain_nodes[t], _terrain_cells[t], base, p)
 
 

@@ -29,6 +29,10 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
   crushed, the player respawns into the state saved when the last idol was lit (or the level start).
 - **Hourglass:** one use jumps back up to 30 ticks (3 s), even mid-fall or after being crushed. 3 uses per level;
   respawning doesn't refill them.
+- **Hazard timing** (all derived from the tick, 10 ticks/s): spikes cycle every 3 s (2 s down, 0.5 s warning, 0.5 s up),
+  with a second phase half a cycle later; dart walls fire every 3 s after a 0.5 s warning, along their row until a
+  solid tile or any object. Cracked floor collapses at the start of the tick after you step off. A boulder, crate
+  or gem entering a pit fills it. Walking into a pit kills.
 
 ## Core tiles & objects
 | Tile/Object | Behaviour |

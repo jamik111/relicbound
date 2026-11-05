@@ -71,4 +71,4 @@ func test_all_test_rooms_load() -> void:
 		var errors := PackedStringArray()
 		var s: SimState = LevelCodec.parse(LevelLoader.load_data(TEST_LEVELS + f), errors)
 		assert_not_null(s, "%s: %s" % [f, errors])
-	assert_eq(count, 5)
+	assert_eq(count, 6)

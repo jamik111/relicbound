@@ -12,6 +12,17 @@ enum Terrain {
 	## Checkpoint idol: the player can stand on it; objects can't enter. Lights when the player steps on it.
 	CHECKPOINT = 5,
 	CHECKPOINT_LIT = 6,
+	## Deadly to walk into. A boulder or crate that enters it fills it (becomes FLOOR).
+	PIT = 7,
+	## Walkable; one tick after the player steps off it, it collapses into a PIT.
+	CRACKED = 8,
+	CRACKED_COLLAPSING = 9,
+	## Timed spike traps (two phases half a cycle apart). Floor-like when down.
+	SPIKES_A = 20,
+	SPIKES_B = 21,
+	## Dart walls: solid; fire along their row (east / west) on a timer.
+	DART_EAST = 22,
+	DART_WEST = 23,
 	DOOR_RED = 10,
 	DOOR_BLUE = 11,
 	DOOR_GOLD = 12,
@@ -50,6 +61,21 @@ static func is_key(o: int) -> bool:
 
 static func key_color(o: int) -> int:
 	return o - Obj.KEY_RED
+
+
+## Terrain the player walks on like floor (hazards decide separately whether it hurts).
+static func is_floor_like(t: int) -> bool:
+	return (t == Terrain.FLOOR or t == Terrain.CRACKED or t == Terrain.CRACKED_COLLAPSING
+		or t == Terrain.SPIKES_A or t == Terrain.SPIKES_B)
+
+
+## Terrain a boulder/crate/gem may move into (a PIT swallows it and becomes floor).
+static func object_can_enter(t: int) -> bool:
+	return is_floor_like(t) or t == Terrain.PIT
+
+
+static func is_spikes(t: int) -> bool:
+	return t == Terrain.SPIKES_A or t == Terrain.SPIKES_B
 
 
 ## Objects that gravity moves.

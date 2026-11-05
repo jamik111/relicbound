@@ -18,6 +18,12 @@ const TERRAIN_CHARS: Dictionary = {
 	":": Tiles.Terrain.DIRT,
 	"E": Tiles.Terrain.EXIT,
 	"I": Tiles.Terrain.CHECKPOINT,
+	"_": Tiles.Terrain.PIT,
+	"=": Tiles.Terrain.CRACKED,
+	"^": Tiles.Terrain.SPIKES_A,
+	"+": Tiles.Terrain.SPIKES_B,
+	">": Tiles.Terrain.DART_EAST,
+	"<": Tiles.Terrain.DART_WEST,
 	"R": Tiles.Terrain.DOOR_RED,
 	"B": Tiles.Terrain.DOOR_BLUE,
 	"G": Tiles.Terrain.DOOR_GOLD,
@@ -73,8 +79,10 @@ static func parse(data: Dictionary, errors: PackedStringArray) -> SimState:
 			s.terrain[s.idx(c)] = TERRAIN_CHARS[tc]
 			if oc == EMPTY_CHAR:
 				continue
-			if tc != EMPTY_CHAR:
+			if oc != PLAYER_CHAR and not Tiles.is_floor_like(TERRAIN_CHARS[tc]):
 				errors.append("objects: '%s' at %s must be on floor, not '%s'" % [oc, c, tc])
+			elif oc == PLAYER_CHAR and tc != EMPTY_CHAR and not Tiles.is_floor_like(TERRAIN_CHARS[tc]):
+				errors.append("objects: player at %s must start on floor, not '%s'" % [c, tc])
 			elif oc == PLAYER_CHAR:
 				players += 1
 				s.player = c

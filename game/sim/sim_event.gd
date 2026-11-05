@@ -18,7 +18,19 @@ enum Type {
 	LEVEL_COMPLETED,   ## cell = exit tile
 	PLAYER_CRUSHED,    ## cell, object = what fell on the player
 	CHECKPOINT_LIT,    ## cell = the idol; Game snapshots the state for respawn
+	PLAYER_KILLED,     ## cell, value = Cause (pit, spikes, dart). Crushing has its own PLAYER_CRUSHED
+	PIT_FILLED,        ## cell, object = what filled it, id
+	FLOOR_CRACKING,    ## cell: the player stepped off cracked floor; it falls in next tick
+	FLOOR_COLLAPSED,   ## cell is now a pit
+	SPIKES_WARNING,    ## cell: spikes rise in 0.5 s (telegraph)
+	SPIKES_UP,         ## cell
+	SPIKES_DOWN,       ## cell
+	DART_WARNING,      ## cell = dart wall: fires in 0.5 s
+	DART_FIRED,        ## cell = dart wall -> to = where the dart stopped
 }
+
+## Why PLAYER_KILLED happened (event value).
+enum Cause { PIT = 0, SPIKES = 1, DART = 2 }
 
 var type: Type
 var cell: Vector2i

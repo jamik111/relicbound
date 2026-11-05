@@ -16,6 +16,8 @@ static func step(state: SimState, intent: Intent) -> StepResult:
 	done.resize(s.width * s.height)
 	done.fill(0)
 
+	# 0) Effects scheduled last tick (cracked floor collapsing).
+	RuleHazards.collapse(s, events)
 	# 1) Player intent.
 	if s.alive and not s.won:
 		RulePlayer.apply(s, DIRECTIONS[intent], done, events)
@@ -24,12 +26,16 @@ static func step(state: SimState, intent: Intent) -> StepResult:
 	var crushed_by: int = RuleGravity.apply(s, done, events)
 	# 4) Element flows: per world (water in World 1...).
 	# 5) Enemies: Sprint 2.
-	# 6) Triggers.
+	# 6) Triggers and hazards (spikes, darts, pits).
+	var hazard_cause: int = RuleHazards.apply(s, events)
 	RuleTriggers.apply(s, events)
-	# 7) Damage resolve.
+	# 7) Damage resolve. Crushing wins if both happen in one tick.
 	if crushed_by != Tiles.Obj.NONE and s.alive:
 		s.alive = false
 		events.append(SimEvent.make(SimEvent.Type.PLAYER_CRUSHED, s.player, s.player, crushed_by))
+	elif hazard_cause >= 0 and s.alive:
+		s.alive = false
+		events.append(SimEvent.make(SimEvent.Type.PLAYER_KILLED, s.player, s.player, Tiles.Obj.NONE, 0, hazard_cause))
 
 	s.tick += 1
 	var result := StepResult.new()
