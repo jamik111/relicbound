@@ -9,6 +9,10 @@ const LEVEL_8: String = "res://levels/greybox/level_08_before_you_fall.json"
 const NEAR_PLATE_8 := Vector2i(1, 4)
 const FAR_PLATE_8 := Vector2i(8, 2)
 const IDOL_8 := Vector2i(6, 1)
+const LEVEL_9: String = "res://levels/greybox/level_09_long_way_round.json"
+const SHIELD_9 := Vector2i(3, 3)
+const LOWER_PLATE_9 := Vector2i(19, 3)
+const UPPER_PLATE_9 := Vector2i(18, 1)
 
 
 func _remembering(rows: PackedStringArray) -> SimState:
@@ -118,15 +122,18 @@ func test_codec_reads_the_level_options() -> void:
 # A search over every input from a given set of scars. It ignores the walking speed, so it allows more than a person
 # can do. It leaves out remnants, so it says nothing about routes that use one to hold a plate for a moment.
 
-## Returns {won: bool, gem: bool, deaths: {cell: true}} for everything reachable without dying.
-func _explore(start: SimState) -> Dictionary:
+## Returns {won: bool, gem: bool, deaths: {cell: true}} for everything reachable without dying. `move_ticks` limits how
+## often the player can move: 1 ignores the walking speed, Game.MOVE_INTERVAL_TICKS is what a person can do.
+func _explore(start: SimState, move_ticks: int = 1) -> Dictionary:
 	var seen: Dictionary = {}
 	var deaths: Dictionary = {}
 	var gem: bool = false
-	var queue: Array[SimState] = [start]
+	var queue: Array[Array] = [[start, 0]]
 	while not queue.is_empty():
-		var s: SimState = queue.pop_back()
-		for intent: int in SimStep.DIRECTIONS.size():
+		var entry: Array = queue.pop_back()
+		var s: SimState = entry[0]
+		var cooldown: int = entry[1]
+		for intent: int in SimStep.DIRECTIONS.size() if cooldown == 0 else 1:
 			var next: SimState = SimStep.step(s, intent as SimStep.Intent).state
 			gem = gem or next.gems_collected > start.gems_collected
 			if next.won:
@@ -134,11 +141,12 @@ func _explore(start: SimState) -> Dictionary:
 			if not next.alive:
 				deaths[next.player] = true
 				continue
+			var next_cooldown: int = maxi(0, cooldown - 1) if intent == 0 else move_ticks - 1
 			var key: Array = [next.player, next.tick % RuleHazards.DART_PERIOD, next.gems_collected, next.gates_open,
-				hash(next.terrain)]
+				hash(next.terrain), next_cooldown]
 			if not seen.has(key):
 				seen[key] = true
-				queue.append(next)
+				queue.append([next, next_cooldown])
 	return {"won": false, "gem": gem, "deaths": deaths}
 
 
@@ -220,6 +228,52 @@ func test_saved_scars_go_back_in_order_and_skip_cells_that_dont_fit() -> void:
 	var s: SimState = _remembering(["#####", "#@..#", "#####"])
 	var cells := PackedInt32Array([s.idx(Vector2i(3, 1)), s.idx(Vector2i(0, 0)), s.idx(Vector2i(2, 1))])
 	assert_eq(RuleMemory.with_scars(s, cells).scars, PackedInt32Array([s.idx(Vector2i(3, 1)), s.idx(Vector2i(2, 1))]))
+
+
+# --- Level 9: shield the corridor, gem, idol, die on the upper plate, echo on the lower plate ---
+
+func _level_9() -> SimState:
+	return LevelLoader.load_state(LEVEL_9)
+
+
+func test_level_9_the_corridor_cant_be_crossed_between_darts() -> void:
+	assert_false(_explore(_level_9(), Game.MOVE_INTERVAL_TICKS)["gem"])
+
+
+func test_level_9_a_scar_west_of_the_junction_opens_the_corridor() -> void:
+	for x: int in [2, 3]:
+		var shielded: SimState = RuleMemory.scarred(_level_9(), Vector2i(x, 3))
+		assert_true(_explore(shielded, Game.MOVE_INTERVAL_TICKS)["gem"], "scar at x=%d" % x)
+
+
+func test_level_9_a_scar_along_the_corridor_blocks_it() -> void:
+	for x: int in [4, 5, 10, 18]:
+		var blocked: SimState = RuleMemory.scarred(_level_9(), Vector2i(x, 3))
+		assert_false(_explore(blocked, Game.MOVE_INTERVAL_TICKS)["gem"], "scar at x=%d" % x)
+
+
+func test_level_9_the_upper_plate_too_soon_walls_off_the_gem() -> void:
+	var s: SimState = RuleMemory.scarred(RuleMemory.scarred(_level_9(), SHIELD_9), UPPER_PLATE_9)
+	assert_false(_explore(s, Game.MOVE_INTERVAL_TICKS)["gem"])
+
+
+func test_level_9_the_shield_also_stops_you_dying_in_the_corridor() -> void:
+	var shielded: SimState = RuleMemory.scarred(_level_9(), SHIELD_9)
+	var deaths: Dictionary = _explore(shielded, Game.MOVE_INTERVAL_TICKS)["deaths"]
+	assert_false(deaths.has(LOWER_PLATE_9), "so the lower plate can't take a scar")
+	assert_true(deaths.has(UPPER_PLATE_9))
+
+
+func test_level_9_lower_plate_alone_doesnt_open_the_gate() -> void:
+	var s: SimState = RuleMemory.scarred(_level_9(), LOWER_PLATE_9)
+	assert_false(H.run(s, ".").gates_open)
+
+
+func test_level_9_there_is_time_to_walk_after_the_hourglass() -> void:
+	var setup: String = ("R.R.U.U.L." + ".".repeat(20) + "X" + "R.R.U.U." + "R.".repeat(16) + "U.U.L.L.L.L.R.R.R.D.."
+		+ "U.L." + ".".repeat(26) + "X" + "D" + "H")
+	var s: SimState = Replay.run(_level_9(), setup + "D." + "L.".repeat(15) + "D.D." + ".".repeat(8) + "R.R.R.")
+	assert_true(s.won, "a 0.8 s pause on the way is fine")
 
 
 func test_level_7_near_plate_first_cuts_off_the_far_plate() -> void:

@@ -77,7 +77,10 @@ hourglass uses.
 - **Level 8 turns level 7's answer into a trap:** only the order gem, idol, die on the far plate, echo on the near plate
   works. Dying first walls off the gem, and lighting the idol first saves a state without it. The echo's 5 s hold leaves
   time to walk, so the challenge is the plan, not a run.
-- **Fairness:** a level that remembers has to be checked for dead ends. Tests search levels 7 and 8 exhaustively without
+- **Level 9 adds the scar as a shield:** its corridor can't be crossed between darts, so you must die just west of the
+  junction first. Dying anywhere along the corridor blocks it. Then gem, idol, die on the upper plate, echo on the lower
+  plate. Going back through easier levels for Forgets was fun in playtest 4, not a chore, so this cost stays for now.
+- **Fairness:** a level that remembers has to be checked for dead ends. Tests search levels 7 to 9 exhaustively without
   remnants or the hourglass, and check the wrong orders directly. The system doesn't yet check that an arbitrary room stays winnable, so it can't be turned on for every level.
 - **Not built yet:** rooms that change their own layout in response to how you fail. That needs a solver that can
   prove each changed room is still winnable.
