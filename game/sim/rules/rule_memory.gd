@@ -5,8 +5,9 @@ extends RefCounted
 ##   stops darts and holds down a plate, so the exact same attempt can't happen twice.
 ## - A remnant, a ghost of your failed attempt, replays it from the moment you respawn: it pushes what you
 ##   pushed and stands where you stood.
-## Only MAX_SCARS scars last, oldest gone first. Restarting the level forgets everything: that's the way out
-## if your scars have closed off the room.
+## Only MAX_SCARS scars last, oldest gone first. They're saved, so restarting or leaving the level keeps them.
+## Winning clears them, and so does spending a Forget (Game.forget): that's the way out if your scars have closed
+## off the room.
 ## Pure: everything comes from the checkpoint, the cell you died on and your inputs, so replays stay exact.
 
 const MAX_SCARS: int = 3
@@ -27,6 +28,14 @@ static func scarred(checkpoint: SimState, died_at: Vector2i) -> SimState:
 		s.scars.remove_at(0)
 	s.spawn_object(died_at, Tiles.Obj.SCAR)
 	s.scars.append(s.idx(died_at))
+	return s
+
+
+## `start` with saved scars put back, oldest first. Cells that no longer fit (the level changed) are skipped.
+static func with_scars(start: SimState, cells: PackedInt32Array) -> SimState:
+	var s: SimState = start
+	for i: int in cells:
+		s = scarred(s, Vector2i(i % s.width, i / s.width))
 	return s
 
 

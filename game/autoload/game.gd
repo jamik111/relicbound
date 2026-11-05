@@ -66,6 +66,8 @@ func load_level(path: String) -> bool:
 	var s: SimState = LevelLoader.load_state(path)
 	if s == null:
 		return false
+	if s.remembers:
+		s = RuleMemory.with_scars(s, Save.scars_of(path))
 	level_path = path
 	state = s
 	prev_state = s
@@ -88,11 +90,31 @@ func load_level(path: String) -> bool:
 
 func restart() -> void:
 	if level_path != "":
+		_remember_death()
 		load_level(level_path)
 
 
 func stop() -> void:
+	_remember_death()
 	running = false
+
+
+## Spends a Forget to wipe this level's scars and start it clean. Returns false if there are no scars or no Forgets.
+func forget() -> bool:
+	_remember_death()
+	if Save.scars_of(level_path).is_empty() or not Save.spend_forget():
+		return false
+	Save.set_scars(level_path, PackedInt32Array())
+	return load_level(level_path)
+
+
+## Scars the checkpoint if the player has died, and saves it. Waits until now because the hourglass can still undo a
+## death. Leaving or restarting during the respawn delay doesn't dodge it. Safe to call twice: a scar won't stack.
+func _remember_death() -> void:
+	if state == null or not state.remembers or state.alive:
+		return
+	_checkpoint = RuleMemory.scarred(_checkpoint, state.player)
+	Save.set_scars(level_path, _checkpoint.scars)
 
 
 ## Hourglass: jumps back up to REWIND_TICKS ticks (works mid-fall and after being crushed) and leaves an
@@ -113,9 +135,9 @@ func rewind() -> bool:
 func respawn() -> void:
 	_history.clear()
 	rewinds_left = _checkpoint_rewinds
+	_remember_death()
 	var next: SimState = _checkpoint
 	if state.remembers and not state.alive:
-		_checkpoint = RuleMemory.scarred(_checkpoint, state.player)
 		next = RuleMemory.with_remnant(_checkpoint, _attempt)
 	_attempt.clear()
 	_replace_state(next)
@@ -198,6 +220,9 @@ func _advance() -> void:
 		elif e.type == SimEvent.Type.PLAYER_CRUSHED or e.type == SimEvent.Type.PLAYER_KILLED:
 			_respawn_timer = RESPAWN_DELAY
 			_checkpoint_pending = false
+		elif e.type == SimEvent.Type.LEVEL_COMPLETED:
+			Save.set_scars(level_path, PackedInt32Array())
+			Save.earn_forget()
 	if _checkpoint_pending and _room_is_settled(state):
 		_checkpoint = state
 		_checkpoint_rewinds = rewinds_left

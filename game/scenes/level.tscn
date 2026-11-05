@@ -126,6 +126,15 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 26
 text = "Restart"
 
+[node name="ForgetButton" type="Button" parent="HUD/Buttons"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 26
+text = "Forget"
+
 [node name="BackButton" type="Button" parent="HUD/Buttons"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 72)

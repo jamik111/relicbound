@@ -66,10 +66,15 @@ hourglass uses.
   short of where you died.
 - **Where you die is a move.** Scars can open a gate, shield a corridor from darts or block your only route. Level 7 is
   built on this: both plates must be held, and dying on the near one first walls off the far one.
-- **The way out:** Restart forgets everything, so scars can't trap you for good. It also means you can wipe the memory
-  and retry the same attempt. Whether that should cost something is an open question for playtests.
-- **Fairness:** a level that remembers has to be checked for dead ends. Tests search level 7 exhaustively (without
-  remnants). The system doesn't yet check that an arbitrary room stays winnable, so it can't be turned on for every level.
+- **Scars stay (playtest 3: a free wipe was too easy, and the cost has to help retention):** they're saved, so Restart,
+  leaving the level and closing the game all keep them. An unfinished room waiting for you is the reason to come back.
+  Winning the level clears them.
+- **Forget, the way out:** spending one wipes a level's scars, so scars can't trap you for good. You start with 1 and
+  hold at most 3. Winning any level earns 1, replays included, so a player with none can always earn one. No timers or
+  payments: the BRD rejects energy systems, and a daily refill would be one. **Not proven yet:** an early level is a
+  cheap source of Forgets, so this cost may prove too low.
+- **Fairness:** a level that remembers has to be checked for dead ends. Tests search level 7 exhaustively without
+  remnants, and a separate test confirms a second route where a remnant holds the near plate. The system doesn't yet check that an arbitrary room stays winnable, so it can't be turned on for every level.
 - **Not built yet:** rooms that change their own layout in response to how you fail. That needs a solver that can
   prove each changed room is still winnable.
 

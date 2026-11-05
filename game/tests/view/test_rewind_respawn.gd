@@ -4,6 +4,7 @@ extends GutTest
 
 const H = preload("res://tests/sim/sim_helpers.gd")
 const PATH: String = "user://test_rewind_level.json"
+const SAVE_PATH: String = "user://test_rewind_save.json"
 
 
 func _load(rows: PackedStringArray, meta: Dictionary = {"gems_required": 0}) -> void:
@@ -23,10 +24,18 @@ func _ticks(n: int, intent: SimStep.Intent = SimStep.Intent.NONE) -> void:
 		Game.release_all()
 
 
+func before_each() -> void:
+	Save.path = SAVE_PATH
+	Save.load_save()
+
+
 func after_each() -> void:
 	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
 	Game.stop()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	Save.path = Save.PATH
+	Save.load_save()
 
 
 func test_rewind_goes_back_up_to_30_ticks() -> void:
@@ -175,13 +184,92 @@ func test_rewind_shortens_what_the_remnant_replays() -> void:
 	assert_eq(Game._attempt.size(), 0, "the hourglass took those moves back")
 
 
-func test_restart_forgets_everything() -> void:
+func test_restart_keeps_the_scars() -> void:
 	_die_in_the_pit()
 	Game.respawn()
 	Game.restart()
 	Game.stop()
+	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.SCAR)
+	assert_true(Game.state.echoes.is_empty(), "the remnant only follows a death")
+
+
+func test_restarting_during_the_respawn_delay_doesnt_dodge_the_scar() -> void:
+	_die_in_the_pit()
+	Game.restart()
+	Game.stop()
+	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.SCAR)
+
+
+func test_leaving_during_the_respawn_delay_doesnt_dodge_the_scar() -> void:
+	_die_in_the_pit()
+	Game.stop()
+	assert_eq(Save.scars_of(PATH).size(), 1)
+
+
+func test_scars_survive_closing_the_game() -> void:
+	_die_in_the_pit()
+	Game.respawn()
+	Save.load_save()  # what the next launch reads from disk
+	assert_true(Game.load_level(PATH))
+	Game.stop()
+	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.SCAR)
+
+
+func test_rewound_death_saves_no_scar() -> void:
+	_die_in_the_pit()
+	assert_true(Game.rewind())
+	Game.stop()
+	assert_true(Save.scars_of(PATH).is_empty())
+
+
+func test_forget_costs_one_and_wipes_the_scars() -> void:
+	_die_in_the_pit()
+	Game.respawn()
+	var before: int = Save.forgets()
+	assert_true(Game.forget())
+	Game.stop()
+	assert_eq(Save.forgets(), before - 1)
 	assert_true(Game.state.scars.is_empty())
-	assert_true(Game.state.echoes.is_empty())
+	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.NONE)
+	assert_true(Save.scars_of(PATH).is_empty())
+
+
+func test_forget_does_nothing_without_a_forget_to_spend() -> void:
+	_die_in_the_pit()
+	Game.respawn()
+	Save.data["forgets"] = 0
+	assert_false(Game.forget())
+	assert_eq(Save.scars_of(PATH).size(), 1)
+
+
+func test_forget_isnt_spent_when_there_are_no_scars() -> void:
+	_load(PIT_ROOM, REMEMBERING)
+	var before: int = Save.forgets()
+	assert_false(Game.forget())
+	assert_eq(Save.forgets(), before)
+
+
+func test_winning_clears_the_scars_and_earns_a_forget() -> void:
+	_load(["#######", "#@.E..#", "#######"], REMEMBERING)
+	Save.set_scars(PATH, PackedInt32Array([11]))
+	assert_true(Game.load_level(PATH))
+	Game.stop()
+	var before: int = Save.forgets()
+	_ticks(2, SimStep.Intent.RIGHT)
+	assert_true(Game.state.won)
+	assert_eq(Save.forgets(), before + 1)
+	assert_true(Save.scars_of(PATH).is_empty())
+
+
+func test_forgets_are_capped() -> void:
+	for i: int in Save.MAX_FORGETS + 2:
+		Save.earn_forget()
+	assert_eq(Save.forgets(), Save.MAX_FORGETS)
+
+
+func test_only_remembering_levels_read_saved_scars() -> void:
+	Save.set_scars(PATH, PackedInt32Array([11]))
+	_load(["#######", "#@....#", "#######"])
 	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.NONE)
 
 

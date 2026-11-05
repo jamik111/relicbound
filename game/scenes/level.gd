@@ -6,7 +6,8 @@ const BOOT_SCENE: String = "res://scenes/boot.tscn"
 const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
 const ECHO_PROMPT: String = "Tap ⌛ now!"
 const NO_REWINDS_TEXT: String = "No rewinds left. Tap Restart if you're stuck."
-const SCARS_TEXT: String = "The temple remembers %d of your deaths (max %d). Restart to forget."
+const SCARS_TEXT: String = "The temple remembers %d of your deaths (max %d), even if you leave."
+const NO_FORGETS_TEXT: String = "No Forgets left. Win any level to earn one."
 const REWIND_PULSE_SCALE: Vector2 = Vector2(1.18, 1.18)
 const REWIND_PULSE_SECONDS: float = 0.35
 const REWIND_PROMPT_TINT: Color = Color(2.2, 1.7, 0.5)
@@ -41,6 +42,7 @@ func _ready() -> void:
 	_view.player_move_ticks = Game.move_interval_ticks
 	%RewindButton.pressed.connect(Game.rewind)
 	%RestartButton.pressed.connect(Game.restart)
+	%ForgetButton.pressed.connect(Game.forget)
 	%BackButton.pressed.connect(_on_back)
 	%NextButton.pressed.connect(_on_next)
 	%ControlsButton.pressed.connect(_on_toggle_controls)
@@ -120,7 +122,9 @@ func _update_hud() -> void:
 	_gems_label.text = "Gems %d/%d%s" % [s.gems_collected, s.gems_required, keys]
 	%RewindButton.text = "⌛ %d\nRewind" % Game.rewinds_left
 	%RewindButton.disabled = Game.rewinds_left <= 0
-	%RewindButton.visible = s.hourglass_uses > 0
+	%ForgetButton.visible = not s.scars.is_empty()
+	%ForgetButton.text = "Forget (%d)" % Save.forgets()
+	%ForgetButton.disabled = Save.forgets() <= 0
 	if s.won:
 		_status_label.text = "Level complete!"
 	elif not s.alive:
@@ -128,7 +132,7 @@ func _update_hud() -> void:
 	elif not s.echoes.is_empty():
 		_status_label.text = _echo_status(s.echoes[-1])
 	elif not s.scars.is_empty():
-		_status_label.text = SCARS_TEXT % [s.scars.size(), RuleMemory.MAX_SCARS]
+		_status_label.text = NO_FORGETS_TEXT if Save.forgets() <= 0 else SCARS_TEXT % [s.scars.size(), RuleMemory.MAX_SCARS]
 	elif Game.rewinds_left <= 0 and s.hourglass_uses > 0:
 		_status_label.text = NO_REWINDS_TEXT
 	elif s.exit_open and s.gems_required > 0:
