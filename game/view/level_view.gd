@@ -88,6 +88,8 @@ var _player_from: Vector3 = Vector3.ZERO
 var _player_move_tick: int = 0
 ## echo id -> {node, from, to, tick, material}
 var _echo_views: Dictionary = {}
+## enemy id -> {node, from, to, tick}
+var _enemy_views: Dictionary = {}
 
 
 func _ready() -> void:
@@ -147,6 +149,19 @@ static func _build_meshes() -> Dictionary:
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.0, 0.25, 0.0), Color.WHITE, 6),
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(-0.25, 0.25, 0.25), Color.WHITE, 6),
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.25, 0.25, 0.25), Color.WHITE, 6),
+		] as Array[Dictionary]),
+		&"viper": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(0.2, 0.14, 0.26), Vector3(0.0, 0.07, -0.26), Color(0.75, 0.85, 0.2)),
+			GreyboxMeshes.part_box(Vector3(0.22, 0.16, 0.26), Vector3(0.0, 0.08, 0.0), Color(0.45, 0.75, 0.15)),
+			GreyboxMeshes.part_box(Vector3(0.3, 0.2, 0.26), Vector3(0.0, 0.1, 0.27), Color(0.8, 0.95, 0.2)),
+			GreyboxMeshes.part_box(Vector3(0.06, 0.04, 0.12), Vector3(0.0, 0.1, 0.46), Color(1.0, 0.1, 0.1)),
+		] as Array[Dictionary]),
+		&"bat": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_ball(0.16, Vector3(0.0, 0.0, 0.0), Color(0.45, 0.2, 0.6), 8, 4),
+			GreyboxMeshes.part_box(Vector3(0.36, 0.04, 0.26), Vector3(-0.3, 0.05, 0.0), Color(0.3, 0.12, 0.42)),
+			GreyboxMeshes.part_box(Vector3(0.36, 0.04, 0.26), Vector3(0.3, 0.05, 0.0), Color(0.3, 0.12, 0.42)),
+			GreyboxMeshes.part_ball(0.04, Vector3(-0.06, 0.08, 0.14), Color(1.0, 0.2, 0.2), 6, 3),
+			GreyboxMeshes.part_ball(0.04, Vector3(0.06, 0.08, 0.14), Color(1.0, 0.2, 0.2), 6, 3),
 		] as Array[Dictionary]),
 		&"plate": GreyboxMeshes.assemble([
 			GreyboxMeshes.part_cyl(0.42, 0.36, 0.06, Vector3(0.0, 0.03, 0.0), Color.WHITE, 12),
@@ -217,6 +232,7 @@ func build(state: SimState) -> void:
 	_kinds.clear()
 	_labels.clear()
 	_echo_views.clear()
+	_enemy_views.clear()
 	_floor = null
 	_prev = state
 	_cur = state
@@ -231,6 +247,7 @@ func build(state: SimState) -> void:
 	add_child(_player)
 	_player_from = cell_to_world(state.player)
 	_player_move_tick = state.tick - player_move_ticks
+	_sync_enemies()
 	_sync_echoes()
 	_apply_light()
 	interpolate(1.0)
@@ -266,6 +283,7 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 		if not _objects.has(id):
 			_spawn_object(id, cur.object_at(_cur_cells[id]))
 	_player.material_override = _player_mat if cur.alive else _player_dead_mat
+	_sync_enemies()
 	_sync_echoes()
 	_apply_light()
 
@@ -288,6 +306,13 @@ func interpolate(alpha: float) -> void:
 	_player.position = _player_from.lerp(cell_to_world(_cur.player), progress)
 	_player.rotation.y = atan2(float(_cur.facing.x), float(_cur.facing.y))
 	_player.scale = Vector3(1.2, 0.25, 1.2) if not _cur.alive else Vector3.ONE
+	for e: SimEnemy in _cur.enemies:
+		var enemy_view: Dictionary = _enemy_views[e.id]
+		var ticks: float = float(RuleEnemies.BAT_MOVE_TICKS if e.kind == SimEnemy.Kind.BAT else RuleEnemies.VIPER_MOVE_TICKS)
+		var along: float = clampf((_cur.tick - int(enemy_view["tick"]) + alpha) / ticks, 0.0, 1.0)
+		var enemy_node: Node3D = enemy_view["node"]
+		enemy_node.position = (enemy_view["from"] as Vector3).lerp(_enemy_world(e), along)
+		enemy_node.rotation.y = atan2(float(e.dir.x), float(e.dir.y))
 	for e: SimEcho in _cur.echoes:
 		var view: Dictionary = _echo_views[e.id]
 		var node: Node3D = view["node"]
@@ -473,6 +498,35 @@ func _flash_dart_warning(wall: Vector2i) -> void:
 
 func _free_after(node: Node, seconds: float) -> void:
 	node.create_tween().tween_callback(node.queue_free).set_delay(seconds)
+
+
+# --- Enemies ------------------------------------------------------------------
+
+## Bats fly above walls; vipers stay on the floor.
+static func _enemy_world(e: SimEnemy) -> Vector3:
+	return cell_to_world(e.cell) + Vector3(0.0, 1.1 if e.kind == SimEnemy.Kind.BAT else 0.0, 0.0)
+
+
+func _sync_enemies() -> void:
+	var alive_ids: Dictionary = {}
+	for e: SimEnemy in _cur.enemies:
+		alive_ids[e.id] = true
+		if not _enemy_views.has(e.id):
+			var node := MeshInstance3D.new()
+			node.mesh = _meshes[&"bat" if e.kind == SimEnemy.Kind.BAT else &"viper"]
+			node.material_override = GreyboxMeshes.material(Color.WHITE)
+			node.position = _enemy_world(e)
+			add_child(node)
+			_enemy_views[e.id] = {"node": node, "from": node.position, "to": e.cell, "tick": _cur.tick - 100}
+		var view: Dictionary = _enemy_views[e.id]
+		if view["to"] != e.cell:
+			view["from"] = (view["node"] as Node3D).position
+			view["to"] = e.cell
+			view["tick"] = _cur.tick
+	for id: int in _enemy_views.keys():
+		if not alive_ids.has(id):
+			((_enemy_views[id] as Dictionary)["node"] as Node).queue_free()
+			_enemy_views.erase(id)
 
 
 # --- Echoes -------------------------------------------------------------------

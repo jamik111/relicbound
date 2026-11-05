@@ -26,7 +26,8 @@ static func step(state: SimState, intent: Intent) -> StepResult:
 	# 3) Falling / rolling objects.
 	var crushed_by: int = RuleGravity.apply(s, done, events)
 	# 4) Element flows: per world (water in World 1...).
-	# 5) Enemies: Sprint 2.
+	# 5) Enemies.
+	var enemy_killed: bool = RuleEnemies.apply(s, events)
 	# 6) Triggers and hazards (spikes, darts, pits).
 	var hazard_cause: int = RuleHazards.apply(s, events)
 	RuleEcho.resolve(s, events)
@@ -38,6 +39,10 @@ static func step(state: SimState, intent: Intent) -> StepResult:
 	elif hazard_cause >= 0 and s.alive:
 		s.alive = false
 		events.append(SimEvent.make(SimEvent.Type.PLAYER_KILLED, s.player, s.player, Tiles.Obj.NONE, 0, hazard_cause))
+	elif enemy_killed and s.alive:
+		s.alive = false
+		events.append(SimEvent.make(SimEvent.Type.PLAYER_KILLED, s.player, s.player, Tiles.Obj.NONE, 0,
+			SimEvent.Cause.ENEMY))
 
 	s.tick += 1
 	var result := StepResult.new()
