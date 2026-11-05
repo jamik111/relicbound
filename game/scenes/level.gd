@@ -9,6 +9,8 @@ const NO_REWINDS_TEXT: String = "No rewinds left. Tap Restart if you're stuck."
 const REWIND_PULSE_SCALE: Vector2 = Vector2(1.18, 1.18)
 const REWIND_PULSE_SECONDS: float = 0.35
 const REWIND_PROMPT_TINT: Color = Color(2.2, 1.7, 0.5)
+## See-through, so the map stays readable underneath it.
+const REWIND_IDLE_TINT: Color = Color(1.0, 1.0, 1.0, 0.6)
 
 @export_file("*.json") var default_level: String = "res://levels/test/test_05_keys_doors.json"
 
@@ -41,6 +43,7 @@ func _ready() -> void:
 	%BackButton.pressed.connect(_on_back)
 	%NextButton.pressed.connect(_on_next)
 	%ControlsButton.pressed.connect(_on_toggle_controls)
+	%RewindButton.modulate = REWIND_IDLE_TINT
 	_update_controls_button()
 	var path: String = Game.level_path if Game.level_path != "" else default_level
 	if not Game.load_level(path):
@@ -86,7 +89,7 @@ func _update_echo_prompt() -> void:
 		_rewind_pulse.kill()
 		_rewind_pulse = null
 		button.scale = Vector2.ONE
-		button.modulate = Color.WHITE
+		button.modulate = REWIND_IDLE_TINT
 
 
 ## Rewind or respawn: rebuild from the restored state; the camera eases over instead of snapping.
