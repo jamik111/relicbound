@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/greybox/level_06_last_across.json",
+	"note": "Send an echo to the near plate first, then cross the bridge yourself, take the gem and push the boulder onto the far plate. Crossing first strands you with one plate unheld.",
+	"inputs": "L.L.L.L.L. H R.R.R.R.R.R.R.R. L.L. D.D. L.L.L.L.",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 1
+	},
+	"hash": "54965be11dc14550e57d72d08908767ea8c7b95bf62c37ea739e4ffb18c695ef"
+}
