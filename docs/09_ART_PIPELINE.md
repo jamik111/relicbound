@@ -91,7 +91,7 @@ matters for live JS rendering. **We always bake sheets**, so the cost in Godot i
 5. **Juice:** every button press scales 0.95 → 1.0 (Tween, 0.08 s) plus a paper "tick" sound. Screen changes use a
    pixelfx transition (`transitions/iris` or `diamond-wipe`) at 0.4 s.
 6. **Mobile rules:** touch targets ≥ 48 dp; HUD inside the safe area (notches); one-thumb reach for the tool and
-   hourglass buttons (bottom-right and top-right); text ≥ 14 px at 1× scale; lock the game to **landscape** and test on a real phone.
+   hourglass buttons (both bottom-right); text ≥ 14 px at 1× scale; lock the game to **landscape** and test on a real phone.
 
 ---
 

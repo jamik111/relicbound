@@ -4,6 +4,10 @@ extends Node3D
 
 const BOOT_SCENE: String = "res://scenes/boot.tscn"
 const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
+const ECHO_PROMPT: String = "Tap ⌛ now!"
+const REWIND_PULSE_SCALE: Vector2 = Vector2(1.18, 1.18)
+const REWIND_PULSE_SECONDS: float = 0.35
+const REWIND_PROMPT_TINT: Color = Color(2.2, 1.7, 0.5)
 
 @export_file("*.json") var default_level: String = "res://levels/test/test_05_keys_doors.json"
 
@@ -15,6 +19,9 @@ const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
 
 ## The level's one-line goal (meta.hint), so a new player always knows what they're doing.
 var _hint: String = ""
+## meta.teach_echo: this room teaches the hourglass, so prompt the player at the right moment.
+var _teach_echo: bool = false
+var _rewind_pulse: Tween
 
 
 func _ready() -> void:
@@ -49,9 +56,35 @@ func _on_level_loaded() -> void:
 	var meta: Dictionary = LevelLoader.load_data(Game.level_path).get("meta", {}) as Dictionary
 	_hint = str(meta.get("hint", ""))
 	_hint_label.text = _hint
+	_teach_echo = bool(meta.get("teach_echo", false))
 	_view.build(Game.state)
 	_camera.snap_to(_view.player_world_position())
 	_update_hud()
+
+
+## True when the player is holding a plate and the hourglass would leave an echo there: the moment to teach it.
+static func should_prompt_echo(s: SimState, teach: bool, rewinds_left: int) -> bool:
+	return (teach and s.alive and rewinds_left > 0 and s.echoes.is_empty()
+		and s.terrain_at(s.player) == Tiles.Terrain.PLATE)
+
+
+func _update_echo_prompt() -> void:
+	var prompting: bool = should_prompt_echo(Game.state, _teach_echo, Game.rewinds_left)
+	if prompting == (_rewind_pulse != null):
+		return
+	var button: Button = %RewindButton
+	if prompting:
+		_hint_label.text = ECHO_PROMPT
+		button.modulate = REWIND_PROMPT_TINT
+		_rewind_pulse = create_tween().set_loops()
+		_rewind_pulse.tween_property(button, "scale", REWIND_PULSE_SCALE, REWIND_PULSE_SECONDS)
+		_rewind_pulse.tween_property(button, "scale", Vector2.ONE, REWIND_PULSE_SECONDS)
+	else:
+		_hint_label.text = _hint
+		_rewind_pulse.kill()
+		_rewind_pulse = null
+		button.scale = Vector2.ONE
+		button.modulate = Color.WHITE
 
 
 ## Rewind or respawn: rebuild from the restored state; the camera eases over instead of snapping.
@@ -79,7 +112,7 @@ func _update_hud() -> void:
 		if s.keys[c] > 0:
 			keys += "  %s×%d" % [KEY_SHAPES[c], s.keys[c]]
 	_gems_label.text = "Gems %d/%d%s" % [s.gems_collected, s.gems_required, keys]
-	%RewindButton.text = "⌛ %d" % Game.rewinds_left
+	%RewindButton.text = "⌛ %d\nRewind" % Game.rewinds_left
 	%RewindButton.disabled = Game.rewinds_left <= 0
 	if s.won:
 		_status_label.text = "Level complete!"
@@ -91,6 +124,7 @@ func _update_hud() -> void:
 		_status_label.text = "The exit is open"
 	else:
 		_status_label.text = ""
+	_update_echo_prompt()
 
 
 func _echo_status(e: SimEcho) -> String:
