@@ -24,6 +24,8 @@ const TERRAIN_CHARS: Dictionary = {
 	"+": Tiles.Terrain.SPIKES_B,
 	">": Tiles.Terrain.DART_EAST,
 	"<": Tiles.Terrain.DART_WEST,
+	"P": Tiles.Terrain.PLATE,
+	"H": Tiles.Terrain.GATE,
 	"R": Tiles.Terrain.DOOR_RED,
 	"B": Tiles.Terrain.DOOR_BLUE,
 	"G": Tiles.Terrain.DOOR_GOLD,

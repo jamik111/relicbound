@@ -27,7 +27,7 @@ static func apply(s: SimState, dir: Vector2i, done: PackedByteArray, events: Arr
 			s.keys[color] += 1
 			events.append(SimEvent.make(SimEvent.Type.KEY_COLLECTED, to, to, obj, key_id, color))
 			_move(s, to, events)
-		elif _try_push(s, to, dir, done, events):
+		elif try_push(s, to, dir, done, events):
 			_move(s, to, events)
 		else:
 			events.append(SimEvent.make(SimEvent.Type.PLAYER_BLOCKED, to))
@@ -45,6 +45,8 @@ static func apply(s: SimState, dir: Vector2i, done: PackedByteArray, events: Arr
 		_move(s, to, events)
 		events.append(SimEvent.make(SimEvent.Type.CHECKPOINT_LIT, to))
 	elif t == Tiles.Terrain.CHECKPOINT_LIT:
+		_move(s, to, events)
+	elif t == Tiles.Terrain.GATE and s.gates_open:
 		_move(s, to, events)
 	elif t == Tiles.Terrain.EXIT and s.exit_open:
 		_move(s, to, events)
@@ -68,7 +70,7 @@ static func _move(s: SimState, to: Vector2i, events: Array[SimEvent]) -> void:
 
 ## Boulders push sideways only; crates push in all four directions. A moving (falling or rolling)
 ## object can't be pushed, and the far side must be open floor.
-static func _try_push(s: SimState, at: Vector2i, dir: Vector2i, done: PackedByteArray,
+static func try_push(s: SimState, at: Vector2i, dir: Vector2i, done: PackedByteArray,
 		events: Array[SimEvent]) -> bool:
 	var obj: int = s.object_at(at)
 	if obj == Tiles.Obj.BOULDER and dir.y != 0:

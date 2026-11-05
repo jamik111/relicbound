@@ -29,6 +29,11 @@ var keys: PackedInt32Array = PackedInt32Array([0, 0, 0, 0])
 var tick: int = 0
 var rng_state: int = 1
 
+## Active echoes of the player's past self, oldest first (RuleEcho).
+var echoes: Array[SimEcho] = []
+## True while a pressure plate is active.
+var gates_open: bool = false
+
 
 static func create(p_width: int, p_height: int, p_seed: int = 1) -> SimState:
 	var s := SimState.new()
@@ -66,6 +71,9 @@ func copy() -> SimState:
 	s.keys = keys.duplicate()
 	s.tick = tick
 	s.rng_state = rng_state
+	s.gates_open = gates_open
+	for e: SimEcho in echoes:
+		s.echoes.append(e.copy())
 	return s
 
 
@@ -128,7 +136,15 @@ func move_object(from: Vector2i, to: Vector2i) -> void:
 
 ## True if an object may move into `c`: floor-like terrain or a pit, no object, no (living) player.
 func is_open_for_object(c: Vector2i) -> bool:
-	return Tiles.object_can_enter(terrain_at(c)) and object_at(c) == Tiles.Obj.NONE and (c != player or not alive)
+	var t: int = terrain_at(c)
+	return (Tiles.object_can_enter(t) or (t == Tiles.Terrain.GATE and gates_open)) and object_at(c) == Tiles.Obj.NONE and (c != player or not alive)
+
+
+func echo_at(c: Vector2i) -> SimEcho:
+	for e: SimEcho in echoes:
+		if e.cell == c:
+			return e
+	return null
 
 
 func count_objects(obj: int) -> int:
@@ -169,4 +185,9 @@ func hash() -> String:
 	ctx.update(objects.to_byte_array())
 	ctx.update(flags)
 	ctx.update(ids.to_byte_array())
+	# Only when in use, so hashes of older replays don't change.
+	if gates_open:
+		ctx.update(PackedByteArray([1]))
+	for e: SimEcho in echoes:
+		ctx.update(e.to_ints().to_byte_array())
 	return ctx.finish().hex_encode()

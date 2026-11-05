@@ -39,7 +39,7 @@ Awakening* (dungeon flow), *Spelunky* (dangers built from the systems).
 | Settings | Temple / castle / mountain | 5 original sites (jungle cenote, desert necropolis, glacier barrow, volcanic forge, sunken clockwork city), each with **its own simulation element** (water, sand, ice, lava, gears) |
 | Tools | Few items | **Relic Kit**: grapple whip, lantern, pick, chalk, decoy idol. Each one adds a new verb and new puzzles |
 | Story | Barely any | A full pulp story with characters, journal entries and cutscenes between worlds |
-| Mistakes | Restart from checkpoint | Checkpoints **plus** a limited *Hourglass Rewind* that undoes the last 3 seconds. The sim always resolves the same way, so this is cheap to build |
+| **Signature: Echoes** | Nothing like it | Checkpoints **plus** a limited *Hourglass*: it rewinds 3 seconds and your past self replays as a ghost you can use (hold a plate, push a boulder, take a dart). The sim always resolves the same way, so the replay is exact. See `05_GDD_MECHANICS.md` |
 | Discovery | Collect diamonds | A **Cartographer's Journal**: rooms map themselves as you explore, glyph clues hint at secrets, and lore pages fill in the history |
 | Controls | Phone keypad | Swipe/hold virtual stick on touch, keyboard, gamepad. Movement is buffered so tight timing feels fair |
 | Replay | Gem count | Gem %, secrets, a par time, a "no rewind" badge, and a daily challenge room built from rules |
