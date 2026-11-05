@@ -5,6 +5,7 @@ extends Node3D
 const BOOT_SCENE: String = "res://scenes/boot.tscn"
 const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
 const ECHO_PROMPT: String = "Tap ⌛ now!"
+const NO_REWINDS_TEXT: String = "No rewinds left. Tap Restart if you're stuck."
 const REWIND_PULSE_SCALE: Vector2 = Vector2(1.18, 1.18)
 const REWIND_PULSE_SECONDS: float = 0.35
 const REWIND_PROMPT_TINT: Color = Color(2.2, 1.7, 0.5)
@@ -121,6 +122,8 @@ func _update_hud() -> void:
 		_status_label.text = "Crushed!" + ("  Rewind?" if Game.rewinds_left > 0 else "")
 	elif not s.echoes.is_empty():
 		_status_label.text = _echo_status(s.echoes[-1])
+	elif Game.rewinds_left <= 0:
+		_status_label.text = NO_REWINDS_TEXT
 	elif s.exit_open and s.gems_required > 0:
 		_status_label.text = "The exit is open"
 	else:
