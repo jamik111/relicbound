@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/test/test_07_echo.json",
+	"note": "Walk to the plate, use the hourglass; the echo replays the walk and holds the gate while the player passes it, takes the gem and exits.",
+	"inputs": "RRRRRRRRR H DD ....... DD RR RRRR",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 1
+	},
+	"hash": "22d7c210aa8fc58968d80e325a66daff386a81f916fda40301b44ce34997cb1d"
+}

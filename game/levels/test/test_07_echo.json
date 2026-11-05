@@ -1,0 +1,31 @@
+{
+	"id": "test_07_echo",
+	"size": [
+		12,
+		6
+	],
+	"meta": {
+		"name": "Test 07: your echo holds the gate",
+		"gems_required": 1,
+		"seed": 1,
+		"hint": "Walk onto the plate, tap ⌛, then go to the gate: your echo walks back and holds it open."
+	},
+	"layers": {
+		"terrain": [
+			"############",
+			"#.........P#",
+			"#.##########",
+			"#H##########",
+			"#......E...#",
+			"############"
+		],
+		"objects": [
+			"............",
+			".@..........",
+			"............",
+			"............",
+			"...*........",
+			"............"
+		]
+	}
+}

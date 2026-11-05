@@ -29,6 +29,8 @@ const TERRAIN_COLORS: Dictionary = {
 	Tiles.Terrain.SPIKES_B: Color(0.40, 0.40, 0.42),
 	Tiles.Terrain.DART_EAST: Color.WHITE,
 	Tiles.Terrain.DART_WEST: Color.WHITE,
+	Tiles.Terrain.PLATE: Color(0.85, 0.62, 0.15),
+	Tiles.Terrain.GATE: Color(0.60, 0.66, 0.78),
 	Tiles.Terrain.DOOR_RED: Color(0.80, 0.22, 0.20),
 	Tiles.Terrain.DOOR_BLUE: Color(0.22, 0.42, 0.85),
 	Tiles.Terrain.DOOR_GOLD: Color(0.90, 0.72, 0.20),
@@ -48,6 +50,10 @@ const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
 const PLAYER_DEAD_TINT: Color = Color(1.0, 0.25, 0.2)
 const GEM_SPIN_SPEED: float = 2.5
 const GEM_BOB_HEIGHT: float = 0.06
+const PLATE_ACTIVE_COLOR: Color = Color(1.0, 0.95, 0.4)
+const ECHO_COLOR: Color = Color(0.5, 1.0, 1.0, 0.8)
+## An echo fades out over its last ticks, so you can see the plate is about to let go.
+const ECHO_FADE_TICKS: float = 20.0
 const KEY_COLORS: Array[Color] = [
 	Color(0.90, 0.25, 0.22), Color(0.30, 0.50, 0.95), Color(0.95, 0.78, 0.25), Color(0.25, 0.78, 0.58),
 ]
@@ -77,6 +83,8 @@ var _player_dead_mat: StandardMaterial3D = GreyboxMeshes.material(PLAYER_DEAD_TI
 var player_move_ticks: int = 2
 var _player_from: Vector3 = Vector3.ZERO
 var _player_move_tick: int = 0
+## echo id -> {node, from, to, tick, material}
+var _echo_views: Dictionary = {}
 
 
 func _ready() -> void:
@@ -137,6 +145,15 @@ static func _build_meshes() -> Dictionary:
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(-0.25, 0.25, 0.25), Color.WHITE, 6),
 			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.25, 0.25, 0.25), Color.WHITE, 6),
 		] as Array[Dictionary]),
+		&"plate": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_cyl(0.42, 0.36, 0.06, Vector3(0.0, 0.03, 0.0), Color.WHITE, 12),
+		] as Array[Dictionary]),
+		&"gate": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(1.0, 0.12, 0.3), Vector3(0.0, 0.84, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.1, 0.9, 0.12), Vector3(-0.32, 0.45, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.1, 0.9, 0.12), Vector3(0.0, 0.45, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.1, 0.9, 0.12), Vector3(0.32, 0.45, 0.0)),
+		] as Array[Dictionary]),
 		&"dart_east": _dart_wall(1.0),
 		&"dart_west": _dart_wall(-1.0),
 		&"boulder": GreyboxMeshes.assemble([
@@ -160,6 +177,13 @@ static func _build_meshes() -> Dictionary:
 			GreyboxMeshes.part_box(Vector3(0.09, 0.08, 0.4), Vector3(0.0, 0.45, 0.1)),
 			GreyboxMeshes.part_box(Vector3(0.16, 0.08, 0.07), Vector3(0.1, 0.45, 0.25)),
 			GreyboxMeshes.part_box(Vector3(0.16, 0.08, 0.07), Vector3(0.1, 0.45, 0.12)),
+		] as Array[Dictionary]),
+		&"echo": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(0.36, 0.42, 0.26), Vector3(0.0, 0.33, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.3, 0.32, 0.14), Vector3(0.0, 0.38, -0.2)),
+			GreyboxMeshes.part_ball(0.17, Vector3(0.0, 0.7, 0.0), Color.WHITE, 10, 5),
+			GreyboxMeshes.part_cyl(0.3, 0.3, 0.04, Vector3(0.0, 0.83, 0.0), Color.WHITE, 12),
+			GreyboxMeshes.part_cyl(0.17, 0.14, 0.17, Vector3(0.0, 0.92, 0.0), Color.WHITE, 10),
 		] as Array[Dictionary]),
 		&"player": GreyboxMeshes.assemble([
 			shadow,
@@ -189,6 +213,7 @@ func build(state: SimState) -> void:
 	_objects.clear()
 	_kinds.clear()
 	_labels.clear()
+	_echo_views.clear()
 	_floor = null
 	_prev = state
 	_cur = state
@@ -203,6 +228,7 @@ func build(state: SimState) -> void:
 	add_child(_player)
 	_player_from = cell_to_world(state.player)
 	_player_move_tick = state.tick - player_move_ticks
+	_sync_echoes()
 	_apply_light()
 	interpolate(1.0)
 
@@ -232,6 +258,7 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 		if not _objects.has(id):
 			_spawn_object(id, cur.object_at(_cur_cells[id]))
 	_player.material_override = _player_mat if cur.alive else _player_dead_mat
+	_sync_echoes()
 	_apply_light()
 
 
@@ -253,6 +280,12 @@ func interpolate(alpha: float) -> void:
 	_player.position = _player_from.lerp(cell_to_world(_cur.player), progress)
 	_player.rotation.y = atan2(float(_cur.facing.x), float(_cur.facing.y))
 	_player.scale = Vector3(1.2, 0.25, 1.2) if not _cur.alive else Vector3.ONE
+	for e: SimEcho in _cur.echoes:
+		var view: Dictionary = _echo_views[e.id]
+		var node: Node3D = view["node"]
+		var step: float = clampf((_cur.tick - int(view["tick"]) + alpha) / player_move_ticks, 0.0, 1.0)
+		node.position = (view["from"] as Vector3).lerp(cell_to_world(e.cell), step)
+		node.rotation.y = atan2(float(e.facing.x), float(e.facing.y))
 
 
 static func cell_to_world(c: Vector2i) -> Vector3:
@@ -317,6 +350,10 @@ func _terrain_mesh_key(t: int) -> StringName:
 		return &"exit"
 	if t == Tiles.Terrain.CHECKPOINT or t == Tiles.Terrain.CHECKPOINT_LIT:
 		return &"idol"
+	if t == Tiles.Terrain.PLATE:
+		return &"plate"
+	if t == Tiles.Terrain.GATE:
+		return &"gate"
 	return &"door"
 
 
@@ -372,15 +409,19 @@ func _apply_light() -> void:
 		elif Tiles.is_spikes(t):
 			var phase: RuleHazards.SpikePhase = RuleHazards.spike_phase(_cur.tick, t)
 			base = SPIKE_COLORS[phase]
-			_scale_spikes(_terrain_nodes[t], _terrain_cells[t], SPIKE_SCALES[phase])
+			_scale_cells(_terrain_nodes[t], _terrain_cells[t], SPIKE_SCALES[phase])
+		elif t == Tiles.Terrain.GATE:
+			_scale_cells(_terrain_nodes[t], _terrain_cells[t], 0.12 if _cur.gates_open else 1.0)
+		elif t == Tiles.Terrain.PLATE and _cur.gates_open:
+			base = PLATE_ACTIVE_COLOR
 		_tint(_terrain_nodes[t], _terrain_cells[t], base, p)
 
 
-func _scale_spikes(node: MultiMeshInstance3D, cells: PackedInt32Array, height: float) -> void:
-	var spike_basis: Basis = Basis().scaled(Vector3(1.0, height, 1.0))
+func _scale_cells(node: MultiMeshInstance3D, cells: PackedInt32Array, height: float) -> void:
+	var cell_basis: Basis = Basis().scaled(Vector3(1.0, height, 1.0))
 	for n: int in cells.size():
 		var c := Vector2i(cells[n] % _cur.width, cells[n] / _cur.width)
-		node.multimesh.set_instance_transform(n, Transform3D(spike_basis, cell_to_world(c)))
+		node.multimesh.set_instance_transform(n, Transform3D(cell_basis, cell_to_world(c)))
 
 
 func _tint(node: MultiMeshInstance3D, cells: PackedInt32Array, base: Color, player: Vector2) -> void:
@@ -394,6 +435,39 @@ func _tint(node: MultiMeshInstance3D, cells: PackedInt32Array, base: Color, play
 			base.r * (AMBIENT + glow * GLOW_COLOR.r),
 			base.g * (AMBIENT + glow * GLOW_COLOR.g),
 			base.b * (AMBIENT + glow * GLOW_COLOR.b)))
+
+
+# --- Echoes -------------------------------------------------------------------
+
+## Matches echo nodes to the current state: starts a step when one moved, fades it near the end, removes gone ones.
+func _sync_echoes() -> void:
+	var alive_ids: Dictionary = {}
+	for e: SimEcho in _cur.echoes:
+		alive_ids[e.id] = true
+		if not _echo_views.has(e.id):
+			_echo_views[e.id] = _make_echo_view(e)
+		var view: Dictionary = _echo_views[e.id]
+		if view["to"] != e.cell:
+			view["from"] = (view["node"] as Node3D).position
+			view["to"] = e.cell
+			view["tick"] = _cur.tick
+		var fade: float = clampf(e.linger / ECHO_FADE_TICKS, 0.0, 1.0)
+		(view["material"] as StandardMaterial3D).albedo_color.a = ECHO_COLOR.a * fade
+	for id: int in _echo_views.keys():
+		if not alive_ids.has(id):
+			((_echo_views[id] as Dictionary)["node"] as Node).queue_free()
+			_echo_views.erase(id)
+
+
+func _make_echo_view(e: SimEcho) -> Dictionary:
+	var mat: StandardMaterial3D = GreyboxMeshes.material(ECHO_COLOR)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var node := MeshInstance3D.new()
+	node.mesh = _meshes[&"echo"]
+	node.material_override = mat
+	node.position = cell_to_world(e.cell)
+	add_child(node)
+	return {"node": node, "from": node.position, "to": e.cell, "tick": _cur.tick - player_move_ticks, "material": mat}
 
 
 # --- Objects ------------------------------------------------------------------

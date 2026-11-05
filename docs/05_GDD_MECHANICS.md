@@ -29,12 +29,27 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
 - **Checkpoint idol:** lights when the player steps on it (stays lit). The room is saved only once nothing in it is
   moving, so a respawn can't drop a boulder on you. Idols are safe spots: objects can't enter them, nothing falls on
   a player standing on one, and they stop darts. 1.0 s after dying, the player respawns into the last save (or the level start).
-- **Hourglass:** one use jumps back up to 30 ticks (3 s), even mid-fall or after being crushed. 3 uses per level;
+- **Hourglass:** one use jumps back up to 30 ticks (3 s), even mid-fall or after being crushed, and leaves an echo. 3 uses per level;
   respawning doesn't refill them.
 - **Hazard timing** (all derived from the tick, 10 ticks/s): spikes cycle every 3 s (2 s down, 0.5 s warning, 0.5 s up),
   with a second phase half a cycle later; dart walls fire every 3 s after a 0.5 s warning, along their row until a
   solid tile or any object. Cracked floor collapses at the start of the tick after you step off. A boulder, crate
   or gem entering a pit fills it. Walking into a pit kills.
+
+## Echoes: the signature mechanic (prototype, chosen after playtest 1)
+**Rewinding doesn't erase what you did. Your past self keeps doing it.** Using the hourglass jumps time back up to
+3 seconds, and your earlier self replays those exact inputs as a ghost while you act freely. You cooperate with
+yourself: this is what makes Relicbound more than another boulder puzzler.
+- **An echo can:** walk, push boulders and crates, dig dirt, weigh down pressure plates.
+- **An echo can't:** take gems or keys (it passes through them), open keyed doors or the exit, light idols, or hold
+  objects up. The player walks through it.
+- **Blind replay:** if the world has changed, it replays its inputs anyway and may bump into things.
+- **Lifetime:** after its replay it holds still for 5 s, then fades. A boulder or crate landing on it, a dart, a pit or
+  risen spikes destroy it, so it can take a hit for you.
+- **Limit:** 3 hourglass uses per level; each one leaves an echo, so up to 3 can overlap.
+- **Pressure plates and gates:** gates are open only while a plate is weighed down (player, echo, boulder or crate), and
+  won't close on someone standing in one.
+- **Not proven yet:** the numbers (3 s back, 5 s hold) are starting values to tune in playtests.
 
 ## Core tiles & objects
 | Tile/Object | Behaviour |
@@ -47,7 +62,7 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
 | Gem (round) | Falls/rolls like a boulder, is collected on touch, and is safe to catch (it never kills) |
 | Red Sunshard | Rare gem in secrets; counts toward 100% |
 | Key / Door | 4 colours, each with a unique shape (♦ ● ▲ ■) for colour-blind players |
-| Pressure plate | Active while weighed down (by the player, a crate, a boulder or the decoy idol) |
+| Pressure plate | Active while weighed down (by the player, an echo, a crate, a boulder or the decoy idol). Opens gates |
 | Spike trap | Timed or proximity; telegraphs for 0.5 s |
 | Dart wall | Fires along a row on a timer; blocked by any object |
 | Cracked floor | Collapses one tick after you step off it; becomes a pit |

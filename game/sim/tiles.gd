@@ -23,6 +23,10 @@ enum Terrain {
 	## Dart walls: solid; fire along their row (east / west) on a timer.
 	DART_EAST = 22,
 	DART_WEST = 23,
+	## Pressure plate: active while weighed down by the player, an echo, a boulder or a crate. Walkable.
+	PLATE = 24,
+	## Gate: open while any plate is active (SimState.gates_open). Won't close on someone standing in it.
+	GATE = 25,
 	DOOR_RED = 10,
 	DOOR_BLUE = 11,
 	DOOR_GOLD = 12,
@@ -66,7 +70,7 @@ static func key_color(o: int) -> int:
 ## Terrain the player walks on like floor (hazards decide separately whether it hurts).
 static func is_floor_like(t: int) -> bool:
 	return (t == Terrain.FLOOR or t == Terrain.CRACKED or t == Terrain.CRACKED_COLLAPSING
-		or t == Terrain.SPIKES_A or t == Terrain.SPIKES_B)
+		or t == Terrain.SPIKES_A or t == Terrain.SPIKES_B or t == Terrain.PLATE)
 
 
 ## Terrain a boulder/crate/gem may move into (a PIT swallows it and becomes floor).

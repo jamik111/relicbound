@@ -85,10 +85,18 @@ func _update_hud() -> void:
 		_status_label.text = "Level complete!"
 	elif not s.alive:
 		_status_label.text = "Crushed!" + ("  Rewind?" if Game.rewinds_left > 0 else "")
+	elif not s.echoes.is_empty():
+		_status_label.text = _echo_status(s.echoes[-1])
 	elif s.exit_open and s.gems_required > 0:
 		_status_label.text = "The exit is open"
 	else:
 		_status_label.text = ""
+
+
+func _echo_status(e: SimEcho) -> String:
+	if e.cursor < e.inputs.size():
+		return "Your echo is replaying"
+	return "Echo fades in %d s" % ceili(float(e.linger) / Game.tick_rate())
 
 
 ## Swipe vs stick is an open PRD question (Q1), so playtesters can switch in-level.

@@ -21,13 +21,15 @@ static func step(state: SimState, intent: Intent) -> StepResult:
 	# 1) Player intent.
 	if s.alive and not s.won:
 		RulePlayer.apply(s, DIRECTIONS[intent], done, events)
-	# 2) Tools: Sprint 4+ (grapple-whip, lantern, pick...).
+	# 2) Echoes, then tools: Sprint 4+ (grapple-whip, lantern, pick...).
+	RuleEcho.apply(s, done, events)
 	# 3) Falling / rolling objects.
 	var crushed_by: int = RuleGravity.apply(s, done, events)
 	# 4) Element flows: per world (water in World 1...).
 	# 5) Enemies: Sprint 2.
 	# 6) Triggers and hazards (spikes, darts, pits).
 	var hazard_cause: int = RuleHazards.apply(s, events)
+	RuleEcho.resolve(s, events)
 	RuleTriggers.apply(s, events)
 	# 7) Damage resolve. Crushing wins if both happen in one tick.
 	if crushed_by != Tiles.Obj.NONE and s.alive:

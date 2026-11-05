@@ -88,12 +88,14 @@ func stop() -> void:
 	running = false
 
 
-## Hourglass: jumps back up to REWIND_TICKS ticks (works mid-fall and after being crushed).
+## Hourglass: jumps back up to REWIND_TICKS ticks (works mid-fall and after being crushed) and leaves an
+## echo of the player replaying those ticks.
 ## Returns false if no charges or no history are left.
 func rewind() -> bool:
 	if rewinds_left <= 0 or _history.is_empty():
 		return false
-	_replace_state(_history.rewind_all())
+	var recorded: PackedInt32Array = _history.intents()
+	_replace_state(RuleEcho.spawned(_history.rewind_all(), recorded))
 	rewinds_left -= 1
 	Events.rewound.emit(rewinds_left)
 	return true
@@ -169,8 +171,9 @@ func _process(delta: float) -> void:
 
 
 func _advance() -> void:
-	var result: StepResult = SimStep.step(state, _take_intent())
-	_history.push(state)
+	var intent: SimStep.Intent = _take_intent()
+	var result: StepResult = SimStep.step(state, intent)
+	_history.push(state, intent)
 	prev_state = state
 	state = result.state
 	for e: SimEvent in result.events:
@@ -201,11 +204,11 @@ func _take_intent() -> SimStep.Intent:
 	return intent
 
 
-## Settled = one idle tick later nothing has moved and the player is still alive, so respawning into this
+## Settled = no echoes, and one idle tick later nothing has moved and the player is still alive, so respawning into this
 ## state can't drop anything on the player. Trial-steps the pure sim instead of duplicating its rules.
 static func _room_is_settled(s: SimState) -> bool:
 	var trial: StepResult = SimStep.step(s, SimStep.Intent.NONE)
-	if not trial.state.alive:
+	if not trial.state.alive or not s.echoes.is_empty():
 		return false
 	for e: SimEvent in trial.events:
 		if e.type in [SimEvent.Type.OBJECT_FELL, SimEvent.Type.OBJECT_ROLLED, SimEvent.Type.OBJECT_LANDED]:

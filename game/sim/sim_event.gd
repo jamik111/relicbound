@@ -27,6 +27,11 @@ enum Type {
 	SPIKES_DOWN,       ## cell
 	DART_WARNING,      ## cell = dart wall: fires in 0.5 s
 	DART_FIRED,        ## cell = dart wall -> to = where the dart stopped
+	ECHO_MOVED,        ## cell -> to, id
+	ECHO_FADED,        ## cell, id: its time ran out
+	ECHO_DESTROYED,    ## cell, id: hit by an object, dart, pit or spikes
+	GATE_OPENED,       ## all gates opened
+	GATE_CLOSED,       ## all gates closed
 }
 
 ## Why PLAYER_KILLED happened (event value).

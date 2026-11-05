@@ -101,6 +101,10 @@ static func _fire_dart(s: SimState, wall: Vector2i, dir: Vector2i, events: Array
 		if c == s.player and s.alive:
 			hit = true
 			break
+		var echo: SimEcho = s.echo_at(c)
+		if echo:
+			RuleEcho.destroy(s, echo, events)  # the echo takes the hit
+			break
 		if s.object_at(c) != Tiles.Obj.NONE:
 			break
 		c += dir
