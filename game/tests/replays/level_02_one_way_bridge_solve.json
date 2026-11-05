@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/greybox/level_02_one_way_bridge.json",
+	"note": "Crossing strands you, but an echo doesn't crack the floor: it pushes the boulder onto the plate while you stay on the safe side.",
+	"inputs": "R.R.R.R.R.R.R. H L. ............ D.D. R.R. R.R.R.R.R.",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 1
+	},
+	"hash": "e4d900897a4c18a3da615b06f7aa14a30f2883c8524216833790369318c385df"
+}

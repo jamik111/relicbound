@@ -1,9 +1,9 @@
 extends Control
-## Entry scene. For the grey-box phase it's a launcher: one button per level in LEVEL_DIR, plus the perf spike.
+## Entry scene. For the grey-box phase it's a launcher: one button per level, plus the perf spike.
 ## Later: run the first-boot benchmark, pick a quality tier, go to the main menu.
 
 const LEVEL_SCENE: String = "res://scenes/level.tscn"
-const LEVEL_DIR: String = "res://levels/test/"
+const LEVEL_DIRS: Array[String] = ["res://levels/greybox/", "res://levels/test/"]
 const PERF_SPIKE_SCENE: String = "res://scenes/spikes/perf_spike.tscn"
 
 @onready var _label: Label = $Label
@@ -17,12 +17,11 @@ func _ready() -> void:
 	print("Relicbound boot OK (v%s, %s, physics=%s)" % [
 		version, renderer, ProjectSettings.get_setting("physics/3d/physics_engine")])
 
-	for file: String in DirAccess.get_files_at(LEVEL_DIR):
-		if file.ends_with(".json"):
-			var path: String = LEVEL_DIR + file
+	for dir: String in LEVEL_DIRS:
+		for path: String in LevelLoader.levels_in(dir):
 			var data: Dictionary = LevelLoader.load_data(path)
 			var meta: Dictionary = data.get("meta", {}) as Dictionary
-			_add_button(str(meta.get("name", file.get_basename())), _play.bind(path))
+			_add_button(str(meta.get("name", path.get_file().get_basename())), _play.bind(path))
 	_add_button("Perf spike", func() -> void: get_tree().change_scene_to_file(PERF_SPIKE_SCENE))
 
 	if OS.is_debug_build() and preload("res://scenes/spikes/perf_spike.gd").autostart_requested():

@@ -1,0 +1,32 @@
+{
+	"id": "level_01_hold_the_gate",
+	"size": [
+		14,
+		6
+	],
+	"meta": {
+		"name": "1: Hold the gate",
+		"gems_required": 2,
+		"seed": 1,
+		"hint": "The second gem is behind the gate. A gate is open only while its plate is held.",
+		"teach_echo": true
+	},
+	"layers": {
+		"terrain": [
+			"##############",
+			"#.........P..#",
+			"#.############",
+			"#H############",
+			"#..........E.#",
+			"##############"
+		],
+		"objects": [
+			"..............",
+			".@..*.........",
+			"..............",
+			"..............",
+			"...*..........",
+			".............."
+		]
+	}
+}

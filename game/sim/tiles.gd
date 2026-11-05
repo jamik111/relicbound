@@ -25,7 +25,7 @@ enum Terrain {
 	DART_WEST = 23,
 	## Pressure plate: active while weighed down by the player, an echo, a boulder or a crate. Walkable.
 	PLATE = 24,
-	## Gate: open while any plate is active (SimState.gates_open). Won't close on someone standing in it.
+	## Gate: open while every plate is active (SimState.gates_open). Won't close on someone standing in it.
 	GATE = 25,
 	DOOR_RED = 10,
 	DOOR_BLUE = 11,

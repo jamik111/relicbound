@@ -38,6 +38,7 @@ func _ready() -> void:
 	%RewindButton.pressed.connect(Game.rewind)
 	%RestartButton.pressed.connect(Game.restart)
 	%BackButton.pressed.connect(_on_back)
+	%NextButton.pressed.connect(_on_next)
 	%ControlsButton.pressed.connect(_on_toggle_controls)
 	_update_controls_button()
 	var path: String = Game.level_path if Game.level_path != "" else default_level
@@ -125,6 +126,7 @@ func _update_hud() -> void:
 	else:
 		_status_label.text = ""
 	_update_echo_prompt()
+	%NextButton.visible = s.won and LevelLoader.next_level(Game.level_path) != ""
 
 
 func _echo_status(e: SimEcho) -> String:
@@ -143,6 +145,10 @@ func _on_toggle_controls() -> void:
 
 func _update_controls_button() -> void:
 	%ControlsButton.text = "Stick" if Settings.touch_scheme == Settings.TouchScheme.STICK else "Swipe"
+
+
+func _on_next() -> void:
+	Game.load_level(LevelLoader.next_level(Game.level_path))
 
 
 func _on_back() -> void:

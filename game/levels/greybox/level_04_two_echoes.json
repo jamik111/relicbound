@@ -1,0 +1,29 @@
+{
+	"id": "level_04_two_echoes",
+	"size": [
+		13,
+		5
+	],
+	"meta": {
+		"name": "4: Two echoes",
+		"gems_required": 1,
+		"seed": 1,
+		"hint": "This gate needs both plates held at once. Two echoes, one you."
+	},
+	"layers": {
+		"terrain": [
+			"#############",
+			"#P.........P#",
+			"######H######",
+			"#.E.........#",
+			"#############"
+		],
+		"objects": [
+			".............",
+			"......@......",
+			".............",
+			".........*...",
+			"............."
+		]
+	}
+}

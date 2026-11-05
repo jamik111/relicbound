@@ -31,7 +31,7 @@ var rng_state: int = 1
 
 ## Active echoes of the player's past self, oldest first (RuleEcho).
 var echoes: Array[SimEcho] = []
-## True while a pressure plate is active.
+## True while every pressure plate in the level is active.
 var gates_open: bool = false
 
 
