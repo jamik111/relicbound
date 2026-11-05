@@ -96,10 +96,12 @@ static func _fire_dart(s: SimState, wall: Vector2i, dir: Vector2i, events: Array
 	var c: Vector2i = wall + dir
 	var hit: bool = false
 	while s.in_bounds(c):
+		if not _dart_passes(s.terrain_at(c)):
+			break  # solid tiles, and idols, which shelter a player standing on them
 		if c == s.player and s.alive:
 			hit = true
 			break
-		if s.object_at(c) != Tiles.Obj.NONE or not _dart_passes(s.terrain_at(c)):
+		if s.object_at(c) != Tiles.Obj.NONE:
 			break
 		c += dir
 	events.append(SimEvent.make(SimEvent.Type.DART_FIRED, wall, c))
@@ -107,5 +109,4 @@ static func _fire_dart(s: SimState, wall: Vector2i, dir: Vector2i, events: Array
 
 
 static func _dart_passes(t: int) -> bool:
-	return Tiles.object_can_enter(t) or t == Tiles.Terrain.CHECKPOINT or t == Tiles.Terrain.CHECKPOINT_LIT \
-		or t == Tiles.Terrain.EXIT
+	return Tiles.object_can_enter(t) or t == Tiles.Terrain.EXIT

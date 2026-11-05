@@ -17,6 +17,8 @@ signal state_replaced()
 signal rewound(charges_left: int)
 ## The player respawned at the last checkpoint after being crushed.
 signal respawned()
+## A lit checkpoint was saved (once nothing in the room is moving).
+signal checkpoint_saved()
 
 signal quality_tier_changed(tier: int)
 signal settings_changed()

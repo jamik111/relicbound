@@ -11,6 +11,10 @@ const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
 @onready var _camera: FollowCamera = $FollowCamera
 @onready var _gems_label: Label = %GemsLabel
 @onready var _status_label: Label = %StatusLabel
+@onready var _hint_label: Label = %HintLabel
+
+## The level's one-line goal (meta.hint), so a new player always knows what they're doing.
+var _hint: String = ""
 
 
 func _ready() -> void:
@@ -22,6 +26,8 @@ func _ready() -> void:
 	Events.level_loaded.connect(_on_level_loaded)
 	Events.sim_events.connect(_on_sim_events)
 	Events.state_replaced.connect(_on_state_replaced)
+	Events.checkpoint_saved.connect(_on_checkpoint_saved)
+	_view.player_move_ticks = Game.move_interval_ticks
 	%RewindButton.pressed.connect(Game.rewind)
 	%RestartButton.pressed.connect(Game.restart)
 	%BackButton.pressed.connect(_on_back)
@@ -40,6 +46,9 @@ func _process(delta: float) -> void:
 
 
 func _on_level_loaded() -> void:
+	var meta: Dictionary = LevelLoader.load_data(Game.level_path).get("meta", {}) as Dictionary
+	_hint = str(meta.get("hint", ""))
+	_hint_label.text = _hint
 	_view.build(Game.state)
 	_camera.snap_to(_view.player_world_position())
 	_update_hud()
@@ -49,6 +58,13 @@ func _on_level_loaded() -> void:
 func _on_state_replaced() -> void:
 	_view.build(Game.state)
 	_update_hud()
+
+
+func _on_checkpoint_saved() -> void:
+	_hint_label.text = "Checkpoint saved"
+	await get_tree().create_timer(2.0).timeout
+	if is_inside_tree():
+		_hint_label.text = _hint
 
 
 func _on_sim_events(_tick: int, events: Array) -> void:

@@ -23,7 +23,8 @@ static func apply(s: SimState, done: PackedByteArray, events: Array[SimEvent]) -
 				continue
 			var below: Vector2i = c + Vector2i.DOWN
 
-			if below == s.player and s.alive:
+			# Idols and the exit are safe spots: objects can't enter them, so nothing falls on a player there.
+			if below == s.player and s.alive and Tiles.object_can_enter(s.terrain_at(below)):
 				if s.is_moving(c):
 					if obj == Tiles.Obj.GEM:
 						var gem_id: int = s.ids[i]

@@ -8,6 +8,7 @@ var _view: LevelView
 
 func before_each() -> void:
 	_view = LevelView.new()
+	_view.player_move_ticks = 1
 	add_child_autofree(_view)
 
 
@@ -35,6 +36,34 @@ func test_interpolates_between_ticks() -> void:
 	assert_almost_eq(_view.player_world_position().x, 1.5, 0.001)
 	_view.interpolate(1.0)
 	assert_eq(_view.player_world_position(), Vector3(2, 0, 1))
+
+
+func test_walk_step_spans_the_move_interval() -> void:
+	_view.player_move_ticks = 2
+	var s: SimState = H.state(["#####", "#@..#", "#####"])
+	_view.build(s)
+	var moved: StepResult = H.step(s, H.R)
+	_view.show_state(s, moved.state, moved.events)
+	_view.interpolate(1.0)
+	assert_almost_eq(_view.player_world_position().x, 1.5, 0.001, "halfway after one of two ticks")
+	var idle: StepResult = H.step(moved.state)
+	_view.show_state(moved.state, idle.state, idle.events)
+	_view.interpolate(1.0)
+	assert_almost_eq(_view.player_world_position().x, 2.0, 0.001)
+
+
+func test_player_faces_its_direction() -> void:
+	var s: SimState = H.state(["#####", "#@..#", "#####"])
+	_view.build(s)
+	var r: StepResult = H.step(s, H.R)
+	_view.show_state(s, r.state, r.events)
+	_view.interpolate(1.0)
+	assert_almost_eq(_view._player.rotation.y, PI / 2.0, 0.001)
+
+
+func test_exit_and_doors_get_labels() -> void:
+	_view.build(H.state(["######", "#@RE.#", "######"]))
+	assert_eq(_view._labels.size(), 2)
 
 
 func test_falling_object_moves_by_id() -> void:

@@ -9,26 +9,26 @@ extends Node3D
 ## recomputed once per tick: no dynamic lights (docs/06_TECH_STACK.md, device results).
 ## Objects and the player: one MeshInstance3D each, keyed by the sim's stable object id.
 
-const AMBIENT: float = 0.62
+const AMBIENT: float = 0.82
 const GLOW_RADIUS: float = 4.5
-const GLOW_STRENGTH: float = 0.55
+const GLOW_STRENGTH: float = 0.35
 const GLOW_COLOR: Color = Color(1.0, 0.82, 0.6)
 
 const TERRAIN_COLORS: Dictionary = {
-	Tiles.Terrain.FLOOR: Color(0.52, 0.48, 0.40),
-	Tiles.Terrain.WALL: Color(0.42, 0.44, 0.40),
-	Tiles.Terrain.ANCIENT_WALL: Color(0.55, 0.50, 0.36),
-	Tiles.Terrain.DIRT: Color(0.45, 0.33, 0.22),
-	Tiles.Terrain.EXIT: Color(0.25, 0.22, 0.18),
-	Tiles.Terrain.CHECKPOINT: Color(0.35, 0.38, 0.33),
-	Tiles.Terrain.CHECKPOINT_LIT: Color(0.35, 1.0, 0.70),
-	Tiles.Terrain.PIT: Color(0.05, 0.04, 0.04),
-	Tiles.Terrain.CRACKED: Color(0.62, 0.55, 0.42),
+	Tiles.Terrain.FLOOR: Color(0.70, 0.62, 0.46),
+	Tiles.Terrain.WALL: Color(0.24, 0.28, 0.36),
+	Tiles.Terrain.ANCIENT_WALL: Color(0.50, 0.38, 0.22),
+	Tiles.Terrain.DIRT: Color(0.42, 0.27, 0.14),
+	Tiles.Terrain.EXIT: Color(0.38, 0.36, 0.40),
+	Tiles.Terrain.CHECKPOINT: Color(0.45, 0.50, 0.46),
+	Tiles.Terrain.CHECKPOINT_LIT: Color(0.30, 1.0, 0.65),
+	Tiles.Terrain.PIT: Color.WHITE,  # colours are baked into the mesh
+	Tiles.Terrain.CRACKED: Color(0.70, 0.62, 0.46),
 	Tiles.Terrain.CRACKED_COLLAPSING: Color(0.85, 0.35, 0.20),
 	Tiles.Terrain.SPIKES_A: Color(0.40, 0.40, 0.42),
 	Tiles.Terrain.SPIKES_B: Color(0.40, 0.40, 0.42),
-	Tiles.Terrain.DART_EAST: Color(0.55, 0.30, 0.45),
-	Tiles.Terrain.DART_WEST: Color(0.55, 0.30, 0.45),
+	Tiles.Terrain.DART_EAST: Color.WHITE,
+	Tiles.Terrain.DART_WEST: Color.WHITE,
 	Tiles.Terrain.DOOR_RED: Color(0.80, 0.22, 0.20),
 	Tiles.Terrain.DOOR_BLUE: Color(0.22, 0.42, 0.85),
 	Tiles.Terrain.DOOR_GOLD: Color(0.90, 0.72, 0.20),
@@ -40,7 +40,14 @@ const TERRAIN_EVENTS: Array[SimEvent.Type] = [
 	SimEvent.Type.DIRT_DUG, SimEvent.Type.DOOR_OPENED, SimEvent.Type.EXIT_OPENED, SimEvent.Type.CHECKPOINT_LIT,
 	SimEvent.Type.PIT_FILLED, SimEvent.Type.FLOOR_CRACKING, SimEvent.Type.FLOOR_COLLAPSED,
 ]
-const SPIKE_COLORS: Array[Color] = [Color(0.40, 0.40, 0.42), Color(0.95, 0.60, 0.15), Color(0.95, 0.20, 0.15)]
+const SPIKE_COLORS: Array[Color] = [Color(0.50, 0.50, 0.54), Color(1.0, 0.65, 0.15), Color(1.0, 0.15, 0.10)]
+## Spike height for each RuleHazards.SpikePhase: they visibly rise through the warning.
+const SPIKE_SCALES: Array[float] = [0.25, 0.55, 1.0]
+## Shapes on keys and doors, so colour is never the only cue (GDD): red, blue, gold, jade.
+const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
+const PLAYER_DEAD_TINT: Color = Color(1.0, 0.25, 0.2)
+const GEM_SPIN_SPEED: float = 2.5
+const GEM_BOB_HEIGHT: float = 0.06
 const KEY_COLORS: Array[Color] = [
 	Color(0.90, 0.25, 0.22), Color(0.30, 0.50, 0.95), Color(0.95, 0.78, 0.25), Color(0.25, 0.78, 0.58),
 ]
@@ -60,26 +67,117 @@ var _player: MeshInstance3D
 var _prev_cells: Dictionary = {}
 var _cur_cells: Dictionary = {}
 var _meshes: Dictionary = {}
-var _player_mat: StandardMaterial3D = GreyboxMeshes.material(Color(0.85, 0.62, 0.30))
-var _player_dead_mat: StandardMaterial3D = GreyboxMeshes.material(Color(0.75, 0.15, 0.12))
+## object id -> Tiles.Obj, for per-kind animation
+var _kinds: Dictionary = {}
+## Name tags on the exit and doors; rebuilt with the terrain.
+var _labels: Array[Label3D] = []
+var _player_mat: StandardMaterial3D = GreyboxMeshes.material(Color.WHITE)
+var _player_dead_mat: StandardMaterial3D = GreyboxMeshes.material(PLAYER_DEAD_TINT)
+## Ticks one step of the player's walk takes on screen (Game.MOVE_INTERVAL_TICKS): keeps walking continuous.
+var player_move_ticks: int = 2
+var _player_from: Vector3 = Vector3.ZERO
+var _player_move_tick: int = 0
 
 
 func _ready() -> void:
-	_meshes = {
+	_meshes = _build_meshes()
+
+
+## All shapes are code-built placeholders (art pipeline: no final art before Gate B), but each kind of thing
+## has its own silhouette so it can be told apart at phone size.
+static func _build_meshes() -> Dictionary:
+	var dark := Color(0.35, 0.35, 0.35)
+	var band := Color(0.55, 0.55, 0.55)
+	var rim := Color(0.55, 0.20, 0.10)
+	var crack := Color(0.15, 0.15, 0.15)
+	var hat := Color(0.55, 0.36, 0.16)
+	var shadow: Dictionary = GreyboxMeshes.part_cyl(0.30, 0.30, 0.01, Vector3(0.0, 0.01, 0.0), Color(0.36, 0.31, 0.24), 12)
+	return {
 		&"floor": GreyboxMeshes.box(Vector3(1.0, 0.1, 1.0)),
-		&"wall": GreyboxMeshes.box(Vector3(1.0, 1.0, 1.0)),
-		&"dirt": GreyboxMeshes.box(Vector3(1.0, 0.45, 1.0)),
-		&"door": GreyboxMeshes.box(Vector3(0.9, 0.9, 0.9)),
-		&"exit": GreyboxMeshes.box(Vector3(0.9, 0.12, 0.9)),
-		&"idol": GreyboxMeshes.box(Vector3(0.35, 0.75, 0.35)),
-		&"pit": GreyboxMeshes.box(Vector3(1.0, 0.02, 1.0)),
-		&"spikes": GreyboxMeshes.box(Vector3(0.8, 0.18, 0.8)),
-		&"boulder": GreyboxMeshes.ball(0.44),
-		&"crate": GreyboxMeshes.box(Vector3(0.8, 0.8, 0.8)),
-		&"gem": GreyboxMeshes.gem(0.3),
-		&"key": GreyboxMeshes.box(Vector3(0.3, 0.3, 0.5)),
-		&"player": GreyboxMeshes.box(Vector3(0.55, 0.9, 0.55)),
+		&"wall": GreyboxMeshes.box(Vector3(1.0, 0.6, 1.0)),
+		&"dirt": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(1.0, 0.25, 1.0), Vector3(0.0, 0.125, 0.0)),
+			GreyboxMeshes.part_ball(0.13, Vector3(-0.22, 0.26, -0.18), Color(0.8, 0.8, 0.8), 6, 3),
+			GreyboxMeshes.part_ball(0.10, Vector3(0.25, 0.26, 0.05), Color(1.3, 1.3, 1.3), 6, 3),
+			GreyboxMeshes.part_ball(0.09, Vector3(-0.05, 0.26, 0.28), Color(0.8, 0.8, 0.8), 6, 3),
+		] as Array[Dictionary]),
+		&"door": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(0.9, 0.75, 0.5), Vector3(0.0, 0.375, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.08, 0.75, 0.04), Vector3(-0.25, 0.375, 0.26), dark),
+			GreyboxMeshes.part_box(Vector3(0.08, 0.75, 0.04), Vector3(0.25, 0.375, 0.26), dark),
+		] as Array[Dictionary]),
+		&"exit": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(0.9, 0.06, 0.9), Vector3(0.0, 0.03, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.16, 1.0, 0.2), Vector3(-0.37, 0.5, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.16, 1.0, 0.2), Vector3(0.37, 0.5, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.95, 0.18, 0.25), Vector3(0.0, 1.05, 0.0)),
+		] as Array[Dictionary]),
+		&"idol": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_cyl(0.32, 0.26, 0.12, Vector3(0.0, 0.06, 0.0)),
+			GreyboxMeshes.part_cyl(0.13, 0.11, 0.5, Vector3(0.0, 0.37, 0.0)),
+			GreyboxMeshes.part_ball(0.17, Vector3(0.0, 0.74, 0.0)),
+		] as Array[Dictionary]),
+		&"pit": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(1.0, 0.02, 1.0), Vector3(0.0, -0.1, 0.0), Color(0.02, 0.02, 0.03)),
+			GreyboxMeshes.part_box(Vector3(1.0, 0.05, 0.09), Vector3(0.0, -0.03, -0.455), rim),
+			GreyboxMeshes.part_box(Vector3(1.0, 0.05, 0.09), Vector3(0.0, -0.03, 0.455), rim),
+			GreyboxMeshes.part_box(Vector3(0.09, 0.05, 1.0), Vector3(-0.455, -0.03, 0.0), rim),
+			GreyboxMeshes.part_box(Vector3(0.09, 0.05, 1.0), Vector3(0.455, -0.03, 0.0), rim),
+		] as Array[Dictionary]),
+		&"cracked": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(0.98, 0.04, 0.98), Vector3(0.0, 0.0, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.5, 0.02, 0.05), Vector3(-0.2, 0.03, -0.2), crack),
+			GreyboxMeshes.part_box(Vector3(0.05, 0.02, 0.45), Vector3(0.05, 0.03, 0.0), crack),
+			GreyboxMeshes.part_box(Vector3(0.45, 0.02, 0.05), Vector3(0.25, 0.03, 0.22), crack),
+		] as Array[Dictionary]),
+		&"spikes": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(-0.25, 0.25, -0.25), Color.WHITE, 6),
+			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.25, 0.25, -0.25), Color.WHITE, 6),
+			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.0, 0.25, 0.0), Color.WHITE, 6),
+			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(-0.25, 0.25, 0.25), Color.WHITE, 6),
+			GreyboxMeshes.part_cyl(0.13, 0.0, 0.5, Vector3(0.25, 0.25, 0.25), Color.WHITE, 6),
+		] as Array[Dictionary]),
+		&"dart_east": _dart_wall(1.0),
+		&"dart_west": _dart_wall(-1.0),
+		&"boulder": GreyboxMeshes.assemble([
+			shadow,
+			GreyboxMeshes.part_ball(0.45, Vector3(0.0, 0.45, 0.0), Color.WHITE, 14, 7),
+			GreyboxMeshes.part_ball(0.09, Vector3(-0.2, 0.72, 0.2), Color(0.6, 0.6, 0.6), 6, 3),
+			GreyboxMeshes.part_ball(0.07, Vector3(0.22, 0.45, 0.33), Color(0.6, 0.6, 0.6), 6, 3),
+		] as Array[Dictionary]),
+		&"crate": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_box(Vector3(0.8, 0.8, 0.8), Vector3(0.0, 0.4, 0.0)),
+			GreyboxMeshes.part_box(Vector3(0.84, 0.1, 0.84), Vector3(0.0, 0.76, 0.0), band),
+			GreyboxMeshes.part_box(Vector3(0.84, 0.1, 0.84), Vector3(0.0, 0.05, 0.0), band),
+			GreyboxMeshes.part_box(Vector3(0.1, 0.8, 0.84), Vector3(-0.37, 0.4, 0.0), band),
+			GreyboxMeshes.part_box(Vector3(0.1, 0.8, 0.84), Vector3(0.37, 0.4, 0.0), band),
+		] as Array[Dictionary]),
+		&"gem": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_ball(0.34, Vector3(0.0, 0.5, 0.0), Color.WHITE, 6, 2),
+		] as Array[Dictionary]),
+		&"key": GreyboxMeshes.assemble([
+			GreyboxMeshes.part_cyl(0.16, 0.16, 0.08, Vector3(0.0, 0.45, -0.18), Color.WHITE, 10),
+			GreyboxMeshes.part_box(Vector3(0.09, 0.08, 0.4), Vector3(0.0, 0.45, 0.1)),
+			GreyboxMeshes.part_box(Vector3(0.16, 0.08, 0.07), Vector3(0.1, 0.45, 0.25)),
+			GreyboxMeshes.part_box(Vector3(0.16, 0.08, 0.07), Vector3(0.1, 0.45, 0.12)),
+		] as Array[Dictionary]),
+		&"player": GreyboxMeshes.assemble([
+			shadow,
+			GreyboxMeshes.part_box(Vector3(0.36, 0.42, 0.26), Vector3(0.0, 0.33, 0.0), Color(0.95, 0.35, 0.15)),
+			GreyboxMeshes.part_box(Vector3(0.3, 0.32, 0.14), Vector3(0.0, 0.38, -0.2), Color(0.45, 0.28, 0.12)),
+			GreyboxMeshes.part_ball(0.17, Vector3(0.0, 0.7, 0.0), Color(0.95, 0.75, 0.58), 10, 5),
+			GreyboxMeshes.part_cyl(0.3, 0.3, 0.04, Vector3(0.0, 0.83, 0.0), hat, 12),
+			GreyboxMeshes.part_cyl(0.17, 0.14, 0.17, Vector3(0.0, 0.92, 0.0), hat, 10),
+		] as Array[Dictionary]),
 	}
+
+
+static func _dart_wall(dir_x: float) -> ArrayMesh:
+	return GreyboxMeshes.assemble([
+		GreyboxMeshes.part_box(Vector3(1.0, 0.6, 1.0), Vector3(0.0, 0.3, 0.0), Color(0.24, 0.28, 0.36)),
+		GreyboxMeshes.part_box(Vector3(0.2, 0.26, 0.5), Vector3(0.55 * dir_x, 0.32, 0.0), Color(0.8, 0.12, 0.1)),
+		GreyboxMeshes.part_box(Vector3(0.06, 0.12, 0.2), Vector3(0.66 * dir_x, 0.32, 0.0), Color(0.05, 0.05, 0.05)),
+	] as Array[Dictionary])
 
 
 ## Rebuilds everything for a freshly loaded level.
@@ -89,6 +187,8 @@ func build(state: SimState) -> void:
 	_terrain_nodes.clear()
 	_terrain_cells.clear()
 	_objects.clear()
+	_kinds.clear()
+	_labels.clear()
 	_floor = null
 	_prev = state
 	_cur = state
@@ -101,6 +201,8 @@ func build(state: SimState) -> void:
 	_player.mesh = _meshes[&"player"]
 	_player.material_override = _player_mat
 	add_child(_player)
+	_player_from = cell_to_world(state.player)
+	_player_move_tick = state.tick - player_move_ticks
 	_apply_light()
 	interpolate(1.0)
 
@@ -111,6 +213,9 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 	_cur = cur
 	_prev_cells = _cur_cells
 	_cur_cells = _object_cells(cur)
+	if prev.player != cur.player:
+		_player_from = _player.position
+		_player_move_tick = cur.tick
 	var terrain_changed: bool = false
 	for e: Variant in events:
 		if (e as SimEvent).type in TERRAIN_EVENTS:
@@ -122,6 +227,7 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 		if not _cur_cells.has(id):
 			(_objects[id] as Node).queue_free()
 			_objects.erase(id)
+			_kinds.erase(id)
 	for id: int in _cur_cells:
 		if not _objects.has(id):
 			_spawn_object(id, cur.object_at(_cur_cells[id]))
@@ -136,8 +242,16 @@ func interpolate(alpha: float) -> void:
 	for id: int in _objects:
 		var to: Vector2i = _cur_cells[id]
 		var from: Vector2i = _prev_cells.get(id, to)
-		(_objects[id] as Node3D).position = cell_to_world(from).lerp(cell_to_world(to), alpha)
-	_player.position = cell_to_world(_prev.player).lerp(cell_to_world(_cur.player), alpha)
+		var node: Node3D = _objects[id]
+		node.position = cell_to_world(from).lerp(cell_to_world(to), alpha)
+		if _kinds[id] == Tiles.Obj.GEM:
+			# Cosmetic only: draws the eye to what you're here to collect.
+			var t: float = Time.get_ticks_msec() / 1000.0
+			node.rotation.y = t * GEM_SPIN_SPEED
+			node.position.y += sin(t * 3.0 + id) * GEM_BOB_HEIGHT
+	var progress: float = clampf((_cur.tick - _player_move_tick + alpha) / player_move_ticks, 0.0, 1.0)
+	_player.position = _player_from.lerp(cell_to_world(_cur.player), progress)
+	_player.rotation.y = atan2(float(_cur.facing.x), float(_cur.facing.y))
 	_player.scale = Vector3(1.2, 0.25, 1.2) if not _cur.alive else Vector3.ONE
 
 
@@ -154,6 +268,9 @@ func player_world_position() -> Vector3:
 func _build_terrain() -> void:
 	for node: Node in _terrain_nodes.values():
 		node.queue_free()
+	for label: Label3D in _labels:
+		label.queue_free()
+	_labels.clear()
 	if _floor:
 		_floor.queue_free()
 	_terrain_nodes.clear()
@@ -170,6 +287,11 @@ func _build_terrain() -> void:
 		var cells: PackedInt32Array = _terrain_cells.get(t, PackedInt32Array())
 		cells.append(i)
 		_terrain_cells[t] = cells
+		var cell := Vector2i(i % s.width, i / s.width)
+		if t == Tiles.Terrain.EXIT:
+			_add_label("EXIT", cell, 1.5, EXIT_OPEN_COLOR if s.exit_open else Color(0.75, 0.75, 0.8))
+		elif Tiles.is_door(t):
+			_add_label(KEY_SHAPES[Tiles.door_color(t)], cell, 1.15, Color.WHITE)
 	_floor = _make_multimesh(_meshes[&"floor"], _floor_cells, -0.1)
 	for t: int in _terrain_cells:
 		var mesh: Mesh = _meshes[_terrain_mesh_key(t)]
@@ -177,6 +299,10 @@ func _build_terrain() -> void:
 
 
 func _terrain_mesh_key(t: int) -> StringName:
+	if t == Tiles.Terrain.DART_EAST:
+		return &"dart_east"
+	if t == Tiles.Terrain.DART_WEST:
+		return &"dart_west"
 	if _is_solid_block(t):
 		return &"wall"
 	if t == Tiles.Terrain.PIT:
@@ -184,7 +310,7 @@ func _terrain_mesh_key(t: int) -> StringName:
 	if Tiles.is_spikes(t):
 		return &"spikes"
 	if t == Tiles.Terrain.CRACKED or t == Tiles.Terrain.CRACKED_COLLAPSING:
-		return &"exit"
+		return &"cracked"
 	if t == Tiles.Terrain.DIRT:
 		return &"dirt"
 	if t == Tiles.Terrain.EXIT:
@@ -192,6 +318,25 @@ func _terrain_mesh_key(t: int) -> StringName:
 	if t == Tiles.Terrain.CHECKPOINT or t == Tiles.Terrain.CHECKPOINT_LIT:
 		return &"idol"
 	return &"door"
+
+
+func _add_label(text: String, cell: Vector2i, height: float, color: Color) -> void:
+	var label: Label3D = _make_label(text, color)
+	label.position = cell_to_world(cell) + Vector3(0.0, height, 0.0)
+	add_child(label)
+	_labels.append(label)
+
+
+static func _make_label(text: String, color: Color) -> Label3D:
+	var label := Label3D.new()
+	label.text = text
+	label.modulate = color
+	label.font_size = 48
+	label.outline_size = 10
+	label.pixel_size = 0.008
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	return label
 
 
 ## Full-height blocks with no floor slab under them.
@@ -225,8 +370,17 @@ func _apply_light() -> void:
 		if t == Tiles.Terrain.EXIT and _cur.exit_open:
 			base = EXIT_OPEN_COLOR
 		elif Tiles.is_spikes(t):
-			base = SPIKE_COLORS[RuleHazards.spike_phase(_cur.tick, t)]
+			var phase: RuleHazards.SpikePhase = RuleHazards.spike_phase(_cur.tick, t)
+			base = SPIKE_COLORS[phase]
+			_scale_spikes(_terrain_nodes[t], _terrain_cells[t], SPIKE_SCALES[phase])
 		_tint(_terrain_nodes[t], _terrain_cells[t], base, p)
+
+
+func _scale_spikes(node: MultiMeshInstance3D, cells: PackedInt32Array, height: float) -> void:
+	var spike_basis: Basis = Basis().scaled(Vector3(1.0, height, 1.0))
+	for n: int in cells.size():
+		var c := Vector2i(cells[n] % _cur.width, cells[n] / _cur.width)
+		node.multimesh.set_instance_transform(n, Transform3D(spike_basis, cell_to_world(c)))
 
 
 func _tint(node: MultiMeshInstance3D, cells: PackedInt32Array, base: Color, player: Vector2) -> void:
@@ -259,16 +413,21 @@ func _spawn_object(id: int, obj: int) -> void:
 	match obj:
 		Tiles.Obj.BOULDER:
 			mi.mesh = _meshes[&"boulder"]
-			color = Color(0.62, 0.60, 0.56)
+			color = Color(0.72, 0.70, 0.68)
 		Tiles.Obj.CRATE:
 			mi.mesh = _meshes[&"crate"]
-			color = Color(0.70, 0.50, 0.28)
+			color = Color(0.85, 0.55, 0.22)
 		Tiles.Obj.GEM:
 			mi.mesh = _meshes[&"gem"]
-			color = Color(0.35, 0.95, 0.75)
+			color = Color(0.25, 1.0, 0.95)
 		_:
 			mi.mesh = _meshes[&"key"]
 			color = KEY_COLORS[Tiles.key_color(obj)] if Tiles.is_key(obj) else Color.MAGENTA
 	mi.material_override = GreyboxMeshes.material(color)
+	if Tiles.is_key(obj):
+		var label: Label3D = _make_label(KEY_SHAPES[Tiles.key_color(obj)], Color.WHITE)
+		label.position = Vector3(0.0, 0.85, 0.0)
+		mi.add_child(label)
 	add_child(mi)
 	_objects[id] = mi
+	_kinds[id] = obj

@@ -18,6 +18,14 @@ func test_lit_idol_does_not_relight() -> void:
 	assert_false(r.has_event(SimEvent.Type.CHECKPOINT_LIT))
 
 
+func test_falling_boulder_cannot_crush_player_on_idol() -> void:
+	var s: SimState = H.state(["#####", "#.O.#", "#...#", "#@I.#", "#####"])
+	var after: SimState = H.run(s, "R..")
+	assert_true(after.alive, "idols are safe spots")
+	assert_eq(H.obj(after, 2, 2), Tiles.Obj.BOULDER, "the boulder stops above the idol")
+	assert_false(after.is_moving(Vector2i(2, 2)))
+
+
 func test_objects_cannot_enter_idol() -> void:
 	var s: SimState = H.state(["#####", "#.O.#", "#.I.#", "#@..#", "#####"])
 	assert_eq(H.obj(H.run(s, "..."), 2, 1), Tiles.Obj.BOULDER)
