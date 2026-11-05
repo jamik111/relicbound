@@ -104,7 +104,8 @@ yourself: this is what makes Relicbound more than another boulder puzzler.
 | Gilded Compass agent | 2–5 | Races you for the exit gems (an NPC "rival run") | Outsmart it: block its route |
 | Clockwork sentry | 5 | Moves only on the beat | Read the rhythm |
 
-Enemies kill on touch, except on an idol. An enemy that touches an echo destroys it and turns back.
+Paths are always shown (playtest 1: without them enemies felt random): dots along a viper's patrol line and a bat's next
+cells. Bats move slower than walking. Enemies kill on touch, except on an idol. An enemy that touches an echo destroys it and turns back.
 
 ## Level beat structure (template)
 1. **Hook room:** see the exit or treasure, but you can't reach it.

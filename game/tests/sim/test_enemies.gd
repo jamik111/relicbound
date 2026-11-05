@@ -106,7 +106,34 @@ func test_idol_is_safe_from_enemies() -> void:
 	var s: SimState = H.run(H.state(["w.....", ".I....", "@....."]), "U")
 	s = H.run(s, "R")
 	assert_eq(s.player, Vector2i(1, 1))
-	assert_true(H.run(s, "...").alive)
+	assert_true(H.run(s, ".".repeat(RuleEnemies.BAT_MOVE_TICKS * 2)).alive)
+
+
+# --- Readable paths ----------------------------------------------------------------
+
+func test_patrol_cells_cover_the_whole_line() -> void:
+	var s: SimState = H.state(["#######", "#..v..#", "#@#####", "#######"])
+	var cells: Array[Vector2i] = RuleEnemies.patrol_cells(s, s.enemies[0])
+	assert_eq(cells.size(), 5)
+	assert_true(Vector2i(1, 1) in cells)
+	assert_true(Vector2i(5, 1) in cells)
+
+
+func test_bat_path_matches_where_it_really_flies() -> void:
+	var s: SimState = H.state(["w....", ".....", ".....", "....@"])
+	var path: Array[Vector2i] = RuleEnemies.bat_path(s, s.enemies[0], 3)
+	var after: SimState = s
+	for expected: Vector2i in path:
+		after = H.run(after, ".".repeat(RuleEnemies.BAT_MOVE_TICKS))
+		assert_eq(after.enemies[0].cell, expected)
+
+
+func test_paths_dont_change_the_state() -> void:
+	var s: SimState = H.state(["w...v", ".....", "....@"])
+	var before: String = s.hash()
+	RuleEnemies.bat_path(s, s.enemies[0], 5)
+	RuleEnemies.patrol_cells(s, s.enemies[1])
+	assert_eq(s.hash(), before)
 
 
 # --- State ---------------------------------------------------------------------

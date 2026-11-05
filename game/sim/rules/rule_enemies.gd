@@ -10,7 +10,10 @@ extends RefCounted
 ## - Touching an echo destroys the echo and turns the enemy back: an echo can buy time or block a corridor.
 
 const VIPER_MOVE_TICKS: int = 4
-const BAT_MOVE_TICKS: int = 3
+## Slower than walking: playtest 1 found a faster bat felt random, because you couldn't read it in time.
+const BAT_MOVE_TICKS: int = 6
+## How many cells ahead the view previews a bat's flight.
+const BAT_PATH_PREVIEW: int = 5
 
 
 static func spawn(s: SimState, kind: SimEnemy.Kind, cell: Vector2i, dir: Vector2i) -> void:
@@ -50,6 +53,32 @@ static func apply(s: SimState, events: Array[SimEvent]) -> bool:
 				events.append(SimEvent.make(SimEvent.Type.ENEMY_MOVED, from, e.cell, Tiles.Obj.NONE, e.id))
 			killed = _touches_player(s, e) or killed
 	return killed
+
+
+## Every cell of a viper's patrol line, for the view to show. Pure: doesn't change anything.
+static func patrol_cells(s: SimState, e: SimEnemy) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = [e.cell]
+	for dir: Vector2i in [e.dir, -e.dir]:
+		var c: Vector2i = e.cell + dir
+		while _viper_can_enter(s, c):
+			cells.append(c)
+			c += dir
+	return cells
+
+
+## The next cells a bat will fly through, bounces included. Pure: doesn't change anything.
+static func bat_path(s: SimState, e: SimEnemy, steps: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	var c: Vector2i = e.cell
+	var d: Vector2i = e.dir
+	for i: int in steps:
+		if c.x + d.x < 0 or c.x + d.x >= s.width:
+			d.x = -d.x
+		if c.y + d.y < 0 or c.y + d.y >= s.height:
+			d.y = -d.y
+		c += d
+		cells.append(c)
+	return cells
 
 
 static func _crushed(s: SimState, e: SimEnemy) -> bool:
