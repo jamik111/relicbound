@@ -173,6 +173,13 @@ func test_replay_hourglass_char_leaves_an_echo() -> void:
 	assert_eq(Replay.encode_inputs(after.echoes[0].inputs), "RR")
 
 
+func test_thinking_before_the_hourglass_still_gives_the_echo_your_walk() -> void:
+	var after: SimState = H.run(H.state(["######", "#@...#", "#....#", "######"]), "RR" + ".".repeat(100) + "H")
+	assert_eq(after.player, Vector2i(1, 1), "back to before the walk, not just before the pause")
+	assert_eq(Replay.encode_inputs(after.echoes[0].inputs), "RR")
+	assert_eq(H.run(after, "..").echoes[0].cell, Vector2i(3, 1), "and the ghost walks")
+
+
 func test_game_rewind_spawns_echo_of_recorded_moves() -> void:
 	var path: String = "user://test_echo_level.json"
 	var file := FileAccess.open(path, FileAccess.WRITE)
