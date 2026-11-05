@@ -1,0 +1,28 @@
+{
+	"id": "level_07_where_you_fall",
+	"size": [17, 5],
+	"meta": {
+		"name": "7: Where you fall",
+		"gems_required": 1,
+		"seed": 1,
+		"remembers": true,
+		"rewinds": 0,
+		"hint": "No hourglass here. The temple remembers where you fall."
+	},
+	"layers": {
+		"terrain": [
+			"#################",
+			"#>...P...P#######",
+			"###.#############",
+			"#.........H...E##",
+			"#################"
+		],
+		"objects": [
+			".................",
+			".................",
+			".................",
+			"..@.........*....",
+			"................."
+		]
+	}
+}

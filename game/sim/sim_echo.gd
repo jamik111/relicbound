@@ -11,6 +11,8 @@ var inputs: PackedInt32Array = PackedInt32Array()
 var cursor: int = 0
 ## Ticks left to hold still after the inputs run out.
 var linger: int = 0
+## True for the ghost of a failed attempt (RuleMemory) rather than of an hourglass use.
+var remnant: bool = false
 
 
 func copy() -> SimEcho:
@@ -21,10 +23,13 @@ func copy() -> SimEcho:
 	e.inputs = inputs.duplicate()
 	e.cursor = cursor
 	e.linger = linger
+	e.remnant = remnant
 	return e
 
 
 func to_ints() -> PackedInt32Array:
 	var out := PackedInt32Array([id, cell.x, cell.y, facing.x, facing.y, cursor, linger])
 	out.append_array(inputs)
+	if remnant:  # only when set, so hashes of older replays don't change
+		out.append(1)
 	return out

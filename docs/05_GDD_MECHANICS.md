@@ -54,6 +54,25 @@ yourself: this is what makes Relicbound more than another boulder puzzler.
   playtest: pausing 3 s used to leave a ghost with nothing to replay). History lasts 60 s of standing still.
 - **Not proven yet:** the numbers (3 s back, 5 s hold) are starting values to tune in playtests.
 
+## The temple remembers (prototype, from playtest 2)
+**Dying isn't a clean retry.** You get to play first, but the room remembers how you failed and won't let the same
+attempt happen twice. Levels opt in with `meta.remembers`; levels 1–6 stay clean teachers. `meta.rewinds` sets a level's
+hourglass uses.
+- **Scar:** a solid red statue stands on the cell where you died. It blocks you, echoes and falling objects, stops darts
+  and holds down a plate for good. At most 3 last; the oldest goes first. Using the hourglass before you respawn undoes
+  the death, so it leaves no scar.
+- **Remnant:** a red ghost replays your failed attempt from the moment you respawn, without your long pauses. It follows
+  echo rules, so it pushes what you pushed and briefly holds plates. It can also end up somewhere new: a scar can stop it
+  short of where you died.
+- **Where you die is a move.** Scars can open a gate, shield a corridor from darts or block your only route. Level 7 is
+  built on this: both plates must be held, and dying on the near one first walls off the far one.
+- **The way out:** Restart forgets everything, so scars can't trap you for good. It also means you can wipe the memory
+  and retry the same attempt. Whether that should cost something is an open question for playtests.
+- **Fairness:** a level that remembers has to be checked for dead ends. Tests search level 7 exhaustively (without
+  remnants). The system doesn't yet check that an arbitrary room stays winnable, so it can't be turned on for every level.
+- **Not built yet:** rooms that change their own layout in response to how you fail. That needs a solver that can
+  prove each changed room is still winnable.
+
 ## Core tiles & objects
 | Tile/Object | Behaviour |
 |---|---|

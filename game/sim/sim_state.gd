@@ -34,6 +34,12 @@ var echoes: Array[SimEcho] = []
 var enemies: Array[SimEnemy] = []
 ## True while every pressure plate in the level is active.
 var gates_open: bool = false
+## meta.remembers: dying here leaves a scar and a remnant (RuleMemory).
+var remembers: bool = false
+## Cell indices of the scars, oldest first.
+var scars: PackedInt32Array = PackedInt32Array()
+## Hourglass uses this level gives (meta.rewinds).
+var hourglass_uses: int = 3
 
 
 static func create(p_width: int, p_height: int, p_seed: int = 1) -> SimState:
@@ -73,6 +79,9 @@ func copy() -> SimState:
 	s.tick = tick
 	s.rng_state = rng_state
 	s.gates_open = gates_open
+	s.remembers = remembers
+	s.scars = scars.duplicate()
+	s.hourglass_uses = hourglass_uses
 	for e: SimEcho in echoes:
 		s.echoes.append(e.copy())
 	for e: SimEnemy in enemies:
@@ -191,6 +200,8 @@ func hash() -> String:
 	# Only when in use, so hashes of older replays don't change.
 	if gates_open:
 		ctx.update(PackedByteArray([1]))
+	if not scars.is_empty():
+		ctx.update(scars.to_byte_array())
 	for e: SimEcho in echoes:
 		ctx.update(e.to_ints().to_byte_array())
 	for e: SimEnemy in enemies:

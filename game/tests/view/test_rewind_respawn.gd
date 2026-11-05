@@ -6,9 +6,9 @@ const H = preload("res://tests/sim/sim_helpers.gd")
 const PATH: String = "user://test_rewind_level.json"
 
 
-func _load(rows: PackedStringArray) -> void:
+func _load(rows: PackedStringArray, meta: Dictionary = {"gems_required": 0}) -> void:
 	var file := FileAccess.open(PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(LevelCodec.from_combined(rows, {"gems_required": 0})))
+	file.store_string(JSON.stringify(LevelCodec.from_combined(rows, meta)))
 	file.close()
 	Game.move_interval_ticks = 1
 	assert_true(Game.load_level(PATH))
@@ -129,6 +129,66 @@ func test_dying_gives_back_the_uses_from_the_level_start() -> void:
 	Game.respawn()
 	assert_eq(Game.rewinds_left, Game.REWIND_CHARGES)
 	assert_eq(Game.state.echoes.size(), 0, "the echoes they made are gone too")
+
+
+const REMEMBERING: Dictionary = {"gems_required": 0, "remembers": true}
+const PIT_ROOM: Array[String] = ["#######", "#@.._.#", "#######"]
+
+
+func _die_in_the_pit() -> void:
+	_load(PIT_ROOM, REMEMBERING)
+	_ticks(3, SimStep.Intent.RIGHT)
+	assert_false(Game.state.alive)
+
+
+func test_remembering_level_leaves_a_scar_and_a_remnant() -> void:
+	_die_in_the_pit()
+	Game.respawn()
+	assert_true(Game.state.alive)
+	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.SCAR)
+	assert_true(Game.state.echoes[0].remnant)
+	assert_eq(Game.state.echoes[0].inputs.size(), 3, "exactly the moves made while alive")
+
+
+func test_scars_survive_a_second_death() -> void:
+	_die_in_the_pit()
+	Game.respawn()
+	_ticks(2, SimStep.Intent.RIGHT)
+	Game.state.alive = false  # a scar now fills the pit, so end this attempt by hand at (3, 1)
+	Game.respawn()
+	assert_eq(Game.state.scars.size(), 2)
+	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.SCAR)
+	assert_eq(Game.state.object_at(Vector2i(3, 1)), Tiles.Obj.SCAR)
+
+
+func test_rewinding_a_death_leaves_no_scar() -> void:
+	_die_in_the_pit()
+	assert_true(Game.rewind())
+	assert_true(Game.state.alive)
+	assert_true(Game.state.scars.is_empty())
+
+
+func test_rewind_shortens_what_the_remnant_replays() -> void:
+	_load(["#########", "#@......#", "#########"], REMEMBERING)
+	_ticks(3, SimStep.Intent.RIGHT)
+	assert_true(Game.rewind())
+	assert_eq(Game._attempt.size(), 0, "the hourglass took those moves back")
+
+
+func test_restart_forgets_everything() -> void:
+	_die_in_the_pit()
+	Game.respawn()
+	Game.restart()
+	Game.stop()
+	assert_true(Game.state.scars.is_empty())
+	assert_true(Game.state.echoes.is_empty())
+	assert_eq(Game.state.object_at(Vector2i(4, 1)), Tiles.Obj.NONE)
+
+
+func test_level_can_set_its_hourglass_uses() -> void:
+	_load(PIT_ROOM, {"gems_required": 0, "rewinds": 0})
+	assert_eq(Game.rewinds_left, 0)
+	assert_false(Game.rewind())
 
 
 func test_dying_gives_back_only_the_uses_held_at_the_checkpoint() -> void:

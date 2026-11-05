@@ -39,6 +39,8 @@ enum Obj {
 	BOULDER = 1,
 	CRATE = 2,
 	GEM = 3,
+	## Statue on a cell where the player died (RuleMemory). Solid, never moves, holds a plate down.
+	SCAR = 4,
 	KEY_RED = 10,
 	KEY_BLUE = 11,
 	KEY_GOLD = 12,

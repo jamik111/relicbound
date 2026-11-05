@@ -74,6 +74,7 @@ Month:   1        2        3        4    5    6    7    8    9    10   11   12  
 | 2.45 | **Echoes prototype** (signature mechanic, added after playtest 1): hourglass leaves a replaying ghost; pressure plates and gates | One room playable; the player says whether it's exciting |
 | 2.6 | 5 grey-box levels following the GDD beat template, **built around Echoes** | Playable start to finish |
 | 2.65 | **Harder Echo puzzles** that make you plan 2–3 steps ahead (playtest 1: "logic over looks") | The player has to stop and think |
+| 2.66 | **The temple remembers** (playtest 2): dying leaves a scar and a remnant, so an attempt can't be repeated. Prototype + level 7 | The player chooses where to die |
 | 2.7 | Basic feedback: effects, placeholder sounds and vibration **only where they make rules easier to understand** | — |
 | 2.75 | **Enemies stay out of the main levels** (playtest 1): they exist in Test 08 only, until one has a real puzzle purpose. See the GDD | Not a Gate B requirement |
 | 2.8 | **Playtest** with 5 people; fill in a feedback form. Ask directly whether Echoes feel new and fun, not just whether the game is fun | Gate B decision |
