@@ -123,6 +123,12 @@ func test_object_blocks_dart() -> void:
 	assert_eq((fired[0] as SimEvent).to, Vector2i(3, 1), "stopped at the crate")
 
 
+func test_idol_shelters_player_from_darts() -> void:
+	var s: SimState = H.run(H.state(["#######", "#>@I..#", "#######"]), "R")
+	var r: StepResult = H.step(_run_to(s, RuleHazards.DART_PERIOD - 1))
+	assert_true(r.state.alive)
+
+
 func test_west_dart_wall_fires_west() -> void:
 	var s: SimState = H.state(["#######", "#.@..<#", "#######"])
 	assert_false(H.step(_run_to(s, RuleHazards.DART_PERIOD - 1)).state.alive)

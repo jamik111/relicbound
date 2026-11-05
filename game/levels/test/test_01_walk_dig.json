@@ -1,7 +1,15 @@
 {
 	"id": "test_01_walk_dig",
-	"size": [12, 7],
-	"meta": {"name": "Test 01: walk and dig", "gems_required": 0, "seed": 1},
+	"size": [
+		12,
+		7
+	],
+	"meta": {
+		"name": "Test 01: walk and dig",
+		"gems_required": 0,
+		"seed": 1,
+		"hint": "Swipe to walk. Walking into dirt digs it. Reach the EXIT gate."
+	},
 	"layers": {
 		"terrain": [
 			"############",

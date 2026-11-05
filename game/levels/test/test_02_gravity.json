@@ -7,7 +7,8 @@
 	"meta": {
 		"name": "Test 02: falling and rolling",
 		"gems_required": 1,
-		"seed": 1
+		"seed": 1,
+		"hint": "Rocks fall when nothing holds them up. Stay out from under falling ones. Get the gem, then the EXIT."
 	},
 	"layers": {
 		"terrain": [

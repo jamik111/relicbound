@@ -10,6 +10,7 @@ func _load(rows: PackedStringArray) -> void:
 	var file := FileAccess.open(PATH, FileAccess.WRITE)
 	file.store_string(JSON.stringify(LevelCodec.from_combined(rows, {"gems_required": 0})))
 	file.close()
+	Game.move_interval_ticks = 1
 	assert_true(Game.load_level(PATH))
 	Game.stop()
 
@@ -23,6 +24,7 @@ func _ticks(n: int, intent: SimStep.Intent = SimStep.Intent.NONE) -> void:
 
 
 func after_each() -> void:
+	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
 	Game.stop()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
 
@@ -71,6 +73,7 @@ func test_respawn_at_lit_checkpoint_after_delay() -> void:
 	_load(["#######", "#@I...#", "#####.#", "#O....#", "#.....#", "#######"])
 	_ticks(1, SimStep.Intent.RIGHT)
 	assert_eq(Game.state.terrain_at(Vector2i(2, 1)), Tiles.Terrain.CHECKPOINT_LIT)
+	_ticks(3)  # the room's boulder lands, so the checkpoint saves
 	# Stand-in for a crush (the respawn path is what's under test). Use a copy: stored states are
 	# never modified, and the checkpoint snapshot is this very object.
 	var dead: SimState = Game.state.copy()
@@ -85,6 +88,35 @@ func test_respawn_at_lit_checkpoint_after_delay() -> void:
 	assert_true(Game.state.alive)
 	assert_eq(Game.state.player, Vector2i(2, 1), "back on the idol")
 	assert_lt(Game.RESPAWN_DELAY, 1.2, "roadmap 2.3: respawn within 1.2 s")
+
+
+func test_checkpoint_waits_until_nothing_is_moving() -> void:
+	_load(["#######", "#@I..O#", "#####.#", "#####.#", "#######"])
+	var start: SimState = Game._checkpoint
+	_ticks(1, SimStep.Intent.RIGHT)
+	assert_eq(Game.state.terrain_at(Vector2i(2, 1)), Tiles.Terrain.CHECKPOINT_LIT)
+	assert_eq(Game._checkpoint, start, "boulder is falling: not saved yet")
+	_ticks(1)
+	assert_eq(Game._checkpoint, start, "still falling")
+	_ticks(1)
+	assert_eq(Game._checkpoint, Game.state, "landed: saved now")
+
+
+func test_checkpoint_saves_at_once_in_a_still_room() -> void:
+	_load(["#####", "#@I.#", "#####"])
+	_ticks(1, SimStep.Intent.RIGHT)
+	assert_eq(Game._checkpoint, Game.state)
+
+
+func test_death_cancels_a_waiting_checkpoint() -> void:
+	# The boulder keeps the room unsettled; the player leaves the idol and walks into the pit.
+	_load(["########", "#@I_..O#", "######.#", "######.#", "########"])
+	var start: SimState = Game._checkpoint
+	_ticks(1, SimStep.Intent.RIGHT)
+	_ticks(1, SimStep.Intent.RIGHT)
+	assert_false(Game.state.alive)
+	_ticks(3)
+	assert_eq(Game._checkpoint, start, "respawn goes back to the level start")
 
 
 func test_crush_schedules_respawn() -> void:

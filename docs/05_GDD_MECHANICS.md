@@ -7,7 +7,8 @@ rotated (5°), so walls have visible faces. (35° above the horizon was tried: 1
 the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors and checkpoints.
 
 ## Simulation tick (the heart of the game)
-- 10 ticks/s by default (assist mode: 6). The player moves 1 tile per tick.
+- 10 ticks/s by default (assist mode: 6). The player walks at most 1 tile per 2 ticks (5 tiles/s; playtest 1: 10 tiles/s
+  was too fast near hazards). Falling and rolling objects still move 1 tile per tick (10 tiles/s).
 - Order within one tick: **1) player intent → 2) tools → 3) falling/rolling objects (scanned bottom-to-top,
   left-to-right) → 4) element flows (water/sand/lava) → 5) enemies → 6) triggers → 7) damage resolve.**
 - Each object has a `moving` flag. A falling object kills only if `moving == true` when it enters the
@@ -25,8 +26,9 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
 - **Keys & doors:** red ♦, blue ●, gold ▲, jade ■. Walking into a door with a matching key opens it and uses
   up the key. Keys don't fall.
 - **Exit:** opens on the tick the quota is met (one `EXIT_OPENED` event); stepping onto it completes the level.
-- **Checkpoint idol:** lights when the player steps on it (stays lit); objects can't enter it. 1.0 s after being
-  crushed, the player respawns into the state saved when the last idol was lit (or the level start).
+- **Checkpoint idol:** lights when the player steps on it (stays lit). The room is saved only once nothing in it is
+  moving, so a respawn can't drop a boulder on you. Idols are safe spots: objects can't enter them, nothing falls on
+  a player standing on one, and they stop darts. 1.0 s after dying, the player respawns into the last save (or the level start).
 - **Hourglass:** one use jumps back up to 30 ticks (3 s), even mid-fall or after being crushed. 3 uses per level;
   respawning doesn't refill them.
 - **Hazard timing** (all derived from the tick, 10 ticks/s): spikes cycle every 3 s (2 s down, 0.5 s warning, 0.5 s up),
@@ -108,4 +110,4 @@ Stars aren't used. Collectibles drive progress: 60% of gems across a world unloc
 - **Touch:** swipe-and-hold (default) or a floating virtual stick. Tool button on the right thumb, Hourglass in the top-right.
 - **Keyboard:** WASD/arrows, Space = tool, Q/E = switch tool, R = rewind, Backspace = restart room, Esc = pause.
 - **Gamepad:** stick/D-pad, A = tool, LB/RB = switch, Y = rewind.
-- Input buffer: the last direction pressed within 120 ms of a tick boundary wins.
+- Input buffer: the last direction pressed before the next allowed step wins, so a quick tap is never lost.

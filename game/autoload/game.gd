@@ -10,6 +10,9 @@ const REWIND_TICKS: int = 30
 const REWIND_CHARGES: int = 3
 ## Seconds from being crushed to respawning at the last lit checkpoint (roadmap 2.3: <= 1.2 s).
 const RESPAWN_DELAY: float = 1.0
+## The player moves at most once per this many ticks: 5 tiles/s at the 10 Hz tick. Objects still fall at 10 tiles/s.
+## This is an input cadence, not a sim rule, so replays (which record per-tick intents) don't change.
+const MOVE_INTERVAL_TICKS: int = 2
 
 ## Input actions registered at startup (remappable later through InputMap).
 const MOVE_ACTIONS: Dictionary = {
@@ -27,15 +30,20 @@ var running: bool = false
 ## Fraction of the next tick already elapsed, for view interpolation (0..1).
 var alpha: float = 0.0
 var rewinds_left: int = REWIND_CHARGES
+var move_interval_ticks: int = MOVE_INTERVAL_TICKS
 
 var _accumulator: float = 0.0
-## Directions currently held, most recent first. Holding a direction moves every tick.
+## Directions currently held, most recent first. Holding a direction repeats at the walking cadence.
 var _held: Array[SimStep.Intent] = []
-## A press since the last tick. It wins over held directions, so a quick tap between ticks isn't lost.
+## A press not yet used. It wins over held directions, so a quick tap between moves isn't lost.
 var _pending: SimStep.Intent = SimStep.Intent.NONE
+## Ticks until the player may move again.
+var _move_cooldown: int = 0
 var _history := RewindBuffer.new(REWIND_TICKS)
 ## State saved when the last checkpoint idol was lit (or the level start). Respawn restores it.
 var _checkpoint: SimState
+## An idol was lit but the room isn't settled yet: save as soon as nothing is moving.
+var _checkpoint_pending: bool = false
 ## Counts down after a crush; < 0 when no respawn is pending.
 var _respawn_timer: float = -1.0
 
@@ -62,6 +70,8 @@ func load_level(path: String) -> bool:
 	_held.clear()
 	_history.clear()
 	_checkpoint = s
+	_checkpoint_pending = false
+	_move_cooldown = 0
 	_respawn_timer = -1.0
 	rewinds_left = REWIND_CHARGES
 	running = true
@@ -100,6 +110,8 @@ func _replace_state(s: SimState) -> void:
 	state = s
 	prev_state = s
 	_pending = SimStep.Intent.NONE
+	_move_cooldown = 0
+	_checkpoint_pending = false
 	_respawn_timer = -1.0
 	_accumulator = 0.0
 	alpha = 0.0
@@ -157,21 +169,48 @@ func _process(delta: float) -> void:
 
 
 func _advance() -> void:
-	var intent: SimStep.Intent = _pending
-	if intent == SimStep.Intent.NONE and not _held.is_empty():
-		intent = _held[0]
-	_pending = SimStep.Intent.NONE
+	var result: StepResult = SimStep.step(state, _take_intent())
 	_history.push(state)
-	var result: StepResult = SimStep.step(state, intent)
 	prev_state = state
 	state = result.state
 	for e: SimEvent in result.events:
 		if e.type == SimEvent.Type.CHECKPOINT_LIT:
-			_checkpoint = state
+			_checkpoint_pending = true
 		elif e.type == SimEvent.Type.PLAYER_CRUSHED or e.type == SimEvent.Type.PLAYER_KILLED:
 			_respawn_timer = RESPAWN_DELAY
+			_checkpoint_pending = false
+	if _checkpoint_pending and _room_is_settled(state):
+		_checkpoint = state
+		_checkpoint_pending = false
+		Events.checkpoint_saved.emit()
 	Events.sim_events.emit(state.tick, result.events)
 	Events.sim_ticked.emit(state.tick)
+
+
+## The direction to send this tick, limited to the walking cadence. A press waits for the cooldown.
+func _take_intent() -> SimStep.Intent:
+	if _move_cooldown > 0:
+		_move_cooldown -= 1
+		return SimStep.Intent.NONE
+	var intent: SimStep.Intent = _pending
+	if intent == SimStep.Intent.NONE and not _held.is_empty():
+		intent = _held[0]
+	_pending = SimStep.Intent.NONE
+	if intent != SimStep.Intent.NONE:
+		_move_cooldown = move_interval_ticks - 1
+	return intent
+
+
+## Settled = one idle tick later nothing has moved and the player is still alive, so respawning into this
+## state can't drop anything on the player. Trial-steps the pure sim instead of duplicating its rules.
+static func _room_is_settled(s: SimState) -> bool:
+	var trial: StepResult = SimStep.step(s, SimStep.Intent.NONE)
+	if not trial.state.alive:
+		return false
+	for e: SimEvent in trial.events:
+		if e.type in [SimEvent.Type.OBJECT_FELL, SimEvent.Type.OBJECT_ROLLED, SimEvent.Type.OBJECT_LANDED]:
+			return false
+	return true
 
 
 func _register_actions() -> void:
