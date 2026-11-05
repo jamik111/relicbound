@@ -1,7 +1,8 @@
 # 05 — Game Design: Mechanics & Systems
 
 ## Camera & view
-Top-down 2.5D. Orthographic camera tilted to 35° and slightly rotated (5°), so walls have visible faces.
+Top-down 2.5D. Orthographic camera tilted 35° away from straight down (55° below the horizon) and slightly
+rotated (5°), so walls have visible faces. (35° above the horizon was tried: 1-tile walls then hid the tiles behind them.)
 "Gravity" in the sim points **south (screen-down)**. The 3D tilt makes this read as "rolling down a slope" into
 the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors and checkpoints.
 
