@@ -93,6 +93,13 @@ yourself: this is what makes Relicbound more than another boulder puzzler.
 | 5 Meridian Core | **Gears/Time** | Rotating room sections turn 90° when a lever is pulled, and gravity is relative to the room. Some tiles move only on the beat (every 4 ticks). Inside time bubbles, falling objects hang until the bubble pops |
 
 ## Enemies
+> **Open design problem (playtest 1):** the viper and bat work, but they're "not impressive" and "feel like a distraction".
+> **Rule: no level uses an enemy until it has a real puzzle purpose tied to Echoes.** The table below is the original plan and
+> is not a commitment. Ideas to try, none chosen yet:
+> - **Bait:** enemies chase the nearest echo rather than you, so you lure them with your past self.
+> - **Living switch:** a viper's weight holds a plate as it passes, making a moving timer you plan echoes around.
+> - **Time-blind guard:** a sentinel that only sees the present, so it reacts to echoes in a way you can exploit.
+
 | Enemy | World | Behaviour | Counter |
 |---|---|---|---|
 | Pit viper | 1+ | Patrols a line at half walking speed, turns at walls and objects | Crush it, block it with a crate, or sacrifice an echo to turn it back |
