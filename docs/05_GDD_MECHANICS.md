@@ -122,7 +122,7 @@ Badges: *Untouched* (no rewind), *Cartographer* (every room seen), *Swift* (unde
 Stars aren't used. Collectibles drive progress: 60% of gems across a world unlocks its boss.
 
 ## Controls
-- **Touch:** swipe-and-hold (default) or a floating virtual stick. Tool button on the right thumb, Hourglass in the top-right.
+- **Touch:** swipe-and-hold (default) or a floating virtual stick. Tool and Hourglass buttons under the right thumb (playtest 1: the Hourglass is the core verb, and players missed it at the top of the screen). Menu buttons stay at the top.
 - **Keyboard:** WASD/arrows, Space = tool, Q/E = switch tool, R = rewind, Backspace = restart room, Esc = pause.
 - **Gamepad:** stick/D-pad, A = tool, LB/RB = switch, Y = rewind.
 - Input buffer: the last direction pressed before the next allowed step wins, so a quick tap is never lost.

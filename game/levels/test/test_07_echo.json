@@ -8,7 +8,8 @@
 		"name": "Test 07: your echo holds the gate",
 		"gems_required": 1,
 		"seed": 1,
-		"hint": "Walk onto the plate, tap ⌛, then go to the gate: your echo walks back and holds it open."
+		"hint": "Walk onto the plate at the far end. A gate opens only while the plate is held.",
+		"teach_echo": true
 	},
 	"layers": {
 		"terrain": [

@@ -53,7 +53,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 40.0
 offset_top = -92.0
-offset_right = -40.0
+offset_right = -230.0
 offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -62,24 +62,35 @@ horizontal_alignment = 1
 vertical_alignment = 2
 autowrap_mode = 3
 
+[node name="RewindButton" type="Button" parent="HUD"]
+unique_name_in_owner = true
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -204.0
+offset_top = -164.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+pivot_offset = Vector2(90, 70)
+focus_mode = 0
+theme_override_font_sizes/font_size = 34
+text = "⌛ 3
+Rewind"
+
 [node name="Buttons" type="HBoxContainer" parent="HUD"]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -664.0
+offset_left = -502.0
 offset_top = 12.0
 offset_right = -16.0
 offset_bottom = 84.0
 grow_horizontal = 0
 theme_override_constants/separation = 12
-
-[node name="RewindButton" type="Button" parent="HUD/Buttons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 72)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 26
-text = "⌛ 3"
 
 [node name="ControlsButton" type="Button" parent="HUD/Buttons"]
 unique_name_in_owner = true
