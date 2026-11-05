@@ -2,7 +2,7 @@ class_name Replay
 extends RefCounted
 ## Replays: a starting state plus one input character per tick.
 ## ".": none, "U"/"D"/"L"/"R": move, "H": use the hourglass (rewind and leave an echo),
-## "X": respawn after dying, as Game does (from the level start: replays don't track idols).
+## "X": respawn after dying, as Game does, from the last idol saved or the level start.
 ## Whitespace is ignored so long inputs can be grouped for reading.
 
 const INPUT_CHARS: String = ".UDLR"  # index = SimStep.Intent
@@ -32,6 +32,7 @@ static func run(start: SimState, inputs: String) -> SimState:
 	var s: SimState = start
 	var checkpoint: SimState = start
 	var attempt := PackedInt32Array()
+	var idol_pending: bool = false
 	var history := RewindBuffer.new(HOURGLASS_TICKS)
 	for ch: String in inputs:
 		if ch == HOURGLASS_CHAR:
@@ -48,11 +49,18 @@ static func run(start: SimState, inputs: String) -> SimState:
 				s = checkpoint
 			attempt.clear()
 			history.clear()
+			idol_pending = false
 			continue
 		var intent: int = INPUT_CHARS.find(ch)
 		if intent >= 0:
 			if s.alive:
 				attempt.append(intent)
 			history.push(s, intent)
-			s = SimStep.step(s, intent as SimStep.Intent).state
+			var result: StepResult = SimStep.step(s, intent as SimStep.Intent)
+			s = result.state
+			idol_pending = idol_pending or result.has_event(SimEvent.Type.CHECKPOINT_LIT)
+			if idol_pending and SimStep.is_settled(s):
+				checkpoint = s
+				attempt.clear()
+				idol_pending = false
 	return s

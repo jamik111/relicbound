@@ -47,6 +47,8 @@ var _checkpoint: SimState
 var _checkpoint_rewinds: int = REWIND_CHARGES
 ## Inputs since that state was saved, while alive: what a remnant replays (RuleMemory).
 var _attempt := PackedInt32Array()
+## The checkpoint came from an idol, not the level start.
+var _saved_at_idol: bool = false
 ## An idol was lit but the room isn't settled yet: save as soon as nothing is moving.
 var _checkpoint_pending: bool = false
 ## Counts down after a crush; < 0 when no respawn is pending.
@@ -66,8 +68,17 @@ func load_level(path: String) -> bool:
 	var s: SimState = LevelLoader.load_state(path)
 	if s == null:
 		return false
+	var rewinds: int = s.hourglass_uses
+	_saved_at_idol = false
 	if s.remembers:
-		s = RuleMemory.with_scars(s, Save.scars_of(path))
+		var idol_save: Dictionary = Save.idol_save_of(path)
+		var restored: SimState = s.restored(idol_save.get("state", {}) as Dictionary)
+		if restored != null:
+			s = restored
+			rewinds = int(idol_save["rewinds"])
+			_saved_at_idol = true
+		else:
+			s = RuleMemory.with_scars(s, Save.scars_of(path))
 	level_path = path
 	state = s
 	prev_state = s
@@ -77,12 +88,12 @@ func load_level(path: String) -> bool:
 	_held.clear()
 	_history.clear()
 	_checkpoint = s
-	_checkpoint_rewinds = s.hourglass_uses
+	_checkpoint_rewinds = rewinds
 	_attempt.clear()
 	_checkpoint_pending = false
 	_move_cooldown = 0
 	_respawn_timer = -1.0
-	rewinds_left = s.hourglass_uses
+	rewinds_left = rewinds
 	running = true
 	Events.level_loaded.emit()
 	return true
@@ -104,7 +115,7 @@ func forget() -> bool:
 	_remember_death()
 	if Save.scars_of(level_path).is_empty() or not Save.spend_forget():
 		return false
-	Save.set_scars(level_path, PackedInt32Array())
+	Save.clear_memory(level_path)
 	return load_level(level_path)
 
 
@@ -115,6 +126,14 @@ func _remember_death() -> void:
 		return
 	_checkpoint = RuleMemory.scarred(_checkpoint, state.player)
 	Save.set_scars(level_path, _checkpoint.scars)
+	_save_idol()
+
+
+## Keeps a lit idol's progress across Restart and closing the game: the scars are saved, so losing what the idol kept
+## (a gem now behind a scar) would punish the player for leaving.
+func _save_idol() -> void:
+	if _saved_at_idol:
+		Save.set_idol_save(level_path, _checkpoint.to_dict(), _checkpoint_rewinds)
 
 
 ## Hourglass: jumps back up to REWIND_TICKS ticks (works mid-fall and after being crushed) and leaves an
@@ -221,13 +240,16 @@ func _advance() -> void:
 			_respawn_timer = RESPAWN_DELAY
 			_checkpoint_pending = false
 		elif e.type == SimEvent.Type.LEVEL_COMPLETED:
-			Save.set_scars(level_path, PackedInt32Array())
+			Save.clear_memory(level_path)
 			Save.earn_forget()
-	if _checkpoint_pending and _room_is_settled(state):
+	if _checkpoint_pending and SimStep.is_settled(state):
 		_checkpoint = state
 		_checkpoint_rewinds = rewinds_left
 		_attempt.clear()
 		_checkpoint_pending = false
+		if state.remembers:
+			_saved_at_idol = true
+			_save_idol()
 		Events.checkpoint_saved.emit()
 	Events.sim_events.emit(state.tick, result.events)
 	Events.sim_ticked.emit(state.tick)
@@ -245,18 +267,6 @@ func _take_intent() -> SimStep.Intent:
 	if intent != SimStep.Intent.NONE:
 		_move_cooldown = move_interval_ticks - 1
 	return intent
-
-
-## Settled = no echoes, and one idle tick later nothing has moved and the player is still alive, so respawning into this
-## state can't drop anything on the player. Trial-steps the pure sim instead of duplicating its rules.
-static func _room_is_settled(s: SimState) -> bool:
-	var trial: StepResult = SimStep.step(s, SimStep.Intent.NONE)
-	if not trial.state.alive or not s.echoes.is_empty():
-		return false
-	for e: SimEvent in trial.events:
-		if e.type in [SimEvent.Type.OBJECT_FELL, SimEvent.Type.OBJECT_ROLLED, SimEvent.Type.OBJECT_LANDED]:
-			return false
-	return true
 
 
 func _register_actions() -> void:

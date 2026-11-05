@@ -62,19 +62,23 @@ hourglass uses.
   and holds down a plate for good. At most 3 last; the oldest goes first. Using the hourglass before you respawn undoes
   the death, so it leaves no scar.
 - **Remnant:** a red ghost replays your failed attempt from the moment you respawn, without your long pauses. It follows
-  echo rules, so it pushes what you pushed and briefly holds plates. It can also end up somewhere new: a scar can stop it
-  short of where you died.
+  echo rules, so it pushes what you pushed, but it has no weight and can't hold a plate (playtest 3: one holding a plate
+  turned level 7 into a timed run). It can end up somewhere new: a scar can stop it short of where you died.
 - **Where you die is a move.** Scars can open a gate, shield a corridor from darts or block your only route. Level 7 is
   built on this: both plates must be held, and dying on the near one first walls off the far one.
 - **Scars stay (playtest 3: a free wipe was too easy, and the cost has to help retention):** they're saved, so Restart,
-  leaving the level and closing the game all keep them. An unfinished room waiting for you is the reason to come back.
+  leaving the level and closing the game all keep them. A lit idol's save is kept too, so Restart returns you to it: a
+  gem the idol kept can't end up stranded behind a scar. An unfinished room waiting for you is the reason to come back.
   Winning the level clears them.
 - **Forget, the way out:** spending one wipes a level's scars, so scars can't trap you for good. You start with 1 and
   hold at most 3. Winning any level earns 1, replays included, so a player with none can always earn one. No timers or
   payments: the BRD rejects energy systems, and a daily refill would be one. **Not proven yet:** an early level is a
   cheap source of Forgets, so this cost may prove too low.
-- **Fairness:** a level that remembers has to be checked for dead ends. Tests search level 7 exhaustively without
-  remnants, and a separate test confirms a second route where a remnant holds the near plate. The system doesn't yet check that an arbitrary room stays winnable, so it can't be turned on for every level.
+- **Level 8 turns level 7's answer into a trap:** only the order gem, idol, die on the far plate, echo on the near plate
+  works. Dying first walls off the gem, and lighting the idol first saves a state without it. The echo's 5 s hold leaves
+  time to walk, so the challenge is the plan, not a run.
+- **Fairness:** a level that remembers has to be checked for dead ends. Tests search levels 7 and 8 exhaustively without
+  remnants or the hourglass, and check the wrong orders directly. The system doesn't yet check that an arbitrary room stays winnable, so it can't be turned on for every level.
 - **Not built yet:** rooms that change their own layout in response to how you fail. That needs a solver that can
   prove each changed room is still winnable.
 
