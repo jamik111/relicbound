@@ -8,6 +8,9 @@ extends RefCounted
 ## STICK (floating virtual stick): the touch-down point is the stick centre. Outside the dead zone the
 ## dominant axis of the offset is held; back inside the dead zone nothing is held.
 
+## How much bigger the sideways part of the stick must be than the forward part to turn.
+const STICK_TURN_RATIO: float = 1.25
+
 ## A Settings.TouchScheme value (autoload enums can't be used as type hints).
 var mode: int = Settings.TouchScheme.SWIPE
 var threshold: float = 32.0
@@ -36,9 +39,26 @@ func move(pos: Vector2) -> SimStep.Intent:
 		if d.length() >= threshold:
 			current = direction_of(d)
 			origin = pos
+		elif current != SimStep.Intent.NONE:
+			# Drifting further the way you're already going mustn't count against the next turn.
+			var heading := Vector2(SimStep.DIRECTIONS[current])
+			origin += heading * maxf(0.0, d.dot(heading))
+	elif d.length() < dead_zone:
+		current = SimStep.Intent.NONE
 	else:
-		current = SimStep.Intent.NONE if d.length() < dead_zone else direction_of(d)
+		current = _stick_direction(d)
 	return current
+
+
+## A thumb near the diagonal mustn't flip between two directions: a sideways turn has to clearly win.
+func _stick_direction(d: Vector2) -> SimStep.Intent:
+	var next: SimStep.Intent = direction_of(d)
+	if current == SimStep.Intent.NONE or next == current:
+		return next
+	var heading := Vector2(SimStep.DIRECTIONS[current])
+	var along: float = d.dot(heading)
+	var across: float = absf(d.dot(Vector2(heading.y, heading.x)))
+	return current if along > 0.0 and across < along * STICK_TURN_RATIO else next
 
 
 func end() -> void:
