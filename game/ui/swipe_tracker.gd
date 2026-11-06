@@ -7,6 +7,7 @@ extends RefCounted
 ## walking; drag the other way past the threshold to turn. Lifting the finger stops.
 ## STICK (floating virtual stick): the touch-down point is the stick centre. Outside the dead zone the
 ## dominant axis of the offset is held; back inside the dead zone nothing is held.
+## DPAD (fixed on screen, the default): the same as STICK, with a centre that never moves. See TouchControls.
 
 ## How much further than a turn a swipe has to go to reverse.
 const REVERSE_FACTOR: float = 2.0
@@ -25,8 +26,13 @@ var current: SimStep.Intent = SimStep.Intent.NONE
 
 
 func begin(pos: Vector2) -> void:
+	begin_at(pos, pos)
+
+
+## A touch at `pos` measured from a fixed centre: the D-pad, which works like a stick that doesn't float.
+func begin_at(center: Vector2, pos: Vector2) -> void:
 	active = true
-	origin = pos
+	origin = center
 	position = pos
 	current = SimStep.Intent.NONE
 

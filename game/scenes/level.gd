@@ -8,6 +8,8 @@ const ECHO_PROMPT: String = "Tap ⌛ now!"
 const NO_REWINDS_TEXT: String = "No rewinds left. Tap Restart if you're stuck."
 const SCARS_TEXT: String = "The temple remembers %d of your deaths (max %d), even if you leave."
 const NO_FORGETS_TEXT: String = "Stuck? Tap Back, win any level for a Forget, then return."
+## Settings.TouchScheme order.
+const CONTROL_NAMES: Array[String] = ["Swipe", "Stick", "D-pad"]
 const REWIND_PULSE_SCALE: Vector2 = Vector2(1.18, 1.18)
 const REWIND_PULSE_SECONDS: float = 0.35
 const REWIND_PROMPT_TINT: Color = Color(2.2, 1.7, 0.5)
@@ -151,16 +153,16 @@ func _echo_status(e: SimEcho) -> String:
 	return "Echo fades in %d s" % ceili(float(e.linger) / Game.tick_rate())
 
 
-## Swipe vs stick is an open PRD question (Q1), so playtesters can switch in-level.
+## Which control scheme is best is an open PRD question (Q1), so playtesters can switch in-level.
 func _on_toggle_controls() -> void:
-	Settings.touch_scheme = (Settings.TouchScheme.STICK if Settings.touch_scheme == Settings.TouchScheme.SWIPE
-		else Settings.TouchScheme.SWIPE)
+	Settings.touch_scheme = ((Settings.touch_scheme + 1) % Settings.TouchScheme.size()) as Settings.TouchScheme
 	Settings.save_settings()
 	_update_controls_button()
+	$HUD/TouchControls.queue_redraw()
 
 
 func _update_controls_button() -> void:
-	%ControlsButton.text = "Stick" if Settings.touch_scheme == Settings.TouchScheme.STICK else "Swipe"
+	%ControlsButton.text = CONTROL_NAMES[Settings.touch_scheme]
 
 
 func _on_next() -> void:
