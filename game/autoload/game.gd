@@ -13,6 +13,10 @@ const RESPAWN_DELAY: float = 1.0
 ## The player moves at most once per this many ticks: 5 tiles/s at the 10 Hz tick. Objects still fall at 10 tiles/s.
 ## This is an input cadence, not a sim rule, so replays (which record per-tick intents) don't change.
 const MOVE_INTERVAL_TICKS: int = 2
+## A held walk stops this long where a new way opens (playtest 5: players kept walking past corners). Turning goes at
+## once, and lifting and swiping the same way again skips the rest of the wait.
+const JUNCTION_PAUSE_TICKS: int = 5
+const NO_CELL: Vector2i = Vector2i(-1, -1)
 
 ## Input actions registered at startup (remappable later through InputMap).
 const MOVE_ACTIONS: Dictionary = {
@@ -41,6 +45,9 @@ var _pending: SimStep.Intent = SimStep.Intent.NONE
 var _move_cooldown: int = 0
 ## Direction of the last real step, NONE when standing still (CornerAssist).
 var _walking: SimStep.Intent = SimStep.Intent.NONE
+## The junction this walk has already paused at, and the ticks of that pause still to run.
+var _paused_at: Vector2i = NO_CELL
+var _junction_wait: int = 0
 var _history := RewindBuffer.new(REWIND_TICKS)
 ## State saved when the last checkpoint idol was lit (or the level start). Respawn restores it.
 var _checkpoint: SimState
@@ -88,6 +95,8 @@ func load_level(path: String) -> bool:
 	alpha = 0.0
 	_pending = SimStep.Intent.NONE
 	_walking = SimStep.Intent.NONE
+	_paused_at = NO_CELL
+	_junction_wait = 0
 	_held.clear()
 	_history.clear()
 	_checkpoint = s
@@ -171,6 +180,8 @@ func _replace_state(s: SimState) -> void:
 	prev_state = s
 	_pending = SimStep.Intent.NONE
 	_walking = SimStep.Intent.NONE
+	_paused_at = NO_CELL
+	_junction_wait = 0
 	_move_cooldown = 0
 	_checkpoint_pending = false
 	_respawn_timer = -1.0
@@ -265,12 +276,18 @@ func _take_intent() -> SimStep.Intent:
 		_move_cooldown -= 1
 		return SimStep.Intent.NONE
 	var want: SimStep.Intent = _pending
+	var fresh_press: bool = want != SimStep.Intent.NONE
 	if want == SimStep.Intent.NONE and not _held.is_empty():
 		want = _held[0]
 	_pending = SimStep.Intent.NONE
 	if want == SimStep.Intent.NONE:
 		_walking = SimStep.Intent.NONE
+		_paused_at = NO_CELL
+		_junction_wait = 0
 		return SimStep.Intent.NONE
+	if want == _walking and not fresh_press and _waiting_at_junction():
+		return SimStep.Intent.NONE
+	_junction_wait = 0
 	var intent: SimStep.Intent = CornerAssist.resolve(state, want, _walking)
 	if intent != want:
 		_pending = want
@@ -278,6 +295,17 @@ func _take_intent() -> SimStep.Intent:
 	_walking = SimStep.Intent.NONE if blocked else intent
 	_move_cooldown = move_interval_ticks - 1
 	return intent
+
+
+## True while a held walk should wait at a junction it has just reached.
+func _waiting_at_junction() -> bool:
+	if _paused_at != state.player and CornerAssist.is_new_opening(state, _walking):
+		_paused_at = state.player
+		_junction_wait = JUNCTION_PAUSE_TICKS
+	if _junction_wait <= 0:
+		return false
+	_junction_wait -= 1
+	return true
 
 
 func _register_actions() -> void:

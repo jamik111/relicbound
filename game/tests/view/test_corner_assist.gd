@@ -81,23 +81,89 @@ func test_a_quick_flick_still_makes_the_turn() -> void:
 	assert_eq(Game.state.player, Vector2i(4, 1), "the finger has lifted, but the turn stays queued")
 
 
-func test_turning_one_tile_late_steps_back_then_turns() -> void:
-	_load(JUNCTION)
-	_walk(4)
+## Enough ticks to reach x=5 with the pause at the junction included.
+func _walk_past_the_junction() -> void:
+	_walk(4 + Game.JUNCTION_PAUSE_TICKS)
 	assert_eq(Game.state.player, Vector2i(5, 2))
+
+
+func test_turning_late_never_moves_you_backwards() -> void:
+	_load(JUNCTION)
+	_walk_past_the_junction()
 	_turn_up()
 	Game._advance()
+	assert_eq(Game.state.player, Vector2i(5, 2), "stopped against the wall (playtest 5: a step back felt chaotic)")
+
+
+# --- Pausing at junctions -----------------------------------------------------------
+
+func test_held_walk_pauses_at_a_new_opening_then_carries_on() -> void:
+	_load(JUNCTION)
+	Game.press(R)
+	for i: int in 3:
+		Game._advance()
 	assert_eq(Game.state.player, Vector2i(4, 2))
+	for i: int in Game.JUNCTION_PAUSE_TICKS:
+		Game._advance()
+		assert_eq(Game.state.player, Vector2i(4, 2), "waiting, tick %d" % i)
+	Game._advance()
+	assert_eq(Game.state.player, Vector2i(5, 2), "still holding, so it carries on")
+
+
+func test_turning_during_the_pause_goes_at_once() -> void:
+	_load(JUNCTION)
+	Game.press(R)
+	for i: int in 4:
+		Game._advance()
+	Game.release(R)
+	_turn_up()
 	Game._advance()
 	assert_eq(Game.state.player, Vector2i(4, 1))
 
 
-func test_turning_two_tiles_late_just_stops_you() -> void:
+func test_swiping_the_same_way_again_skips_the_pause() -> void:
 	_load(JUNCTION)
-	_walk(5)
-	_turn_up()
+	Game.press(R)
+	for i: int in 4:
+		Game._advance()
+	Game.release(R)
+	Game.press(R)
 	Game._advance()
-	assert_eq(Game.state.player, Vector2i(6, 2))
+	assert_eq(Game.state.player, Vector2i(5, 2))
+
+
+func test_lifting_during_the_pause_stops_you() -> void:
+	_load(JUNCTION)
+	Game.press(R)
+	for i: int in 4:
+		Game._advance()
+	Game.release(R)
+	for i: int in Game.JUNCTION_PAUSE_TICKS + 2:
+		Game._advance()
+	assert_eq(Game.state.player, Vector2i(4, 2))
+
+
+func test_no_pause_in_a_plain_corridor_or_an_open_room() -> void:
+	_load(["#######", "#@....#", "#######"])
+	_walk(4)
+	assert_eq(Game.state.player, Vector2i(5, 1))
+	_load(["#######", "#.....#", "#@....#", "#.....#", "#######"])
+	_walk(4)
+	assert_eq(Game.state.player, Vector2i(5, 2))
+
+
+func test_no_pause_for_a_side_way_that_is_shut_or_a_pit() -> void:
+	_load(["#######", "###H###", "#@....#", "###_###", "#######"])
+	_walk(3)
+	assert_eq(Game.state.player, Vector2i(4, 2), "a shut gate and a pit aren't choices you can take")
+
+
+func test_each_junction_pauses_once_per_visit() -> void:
+	_load(JUNCTION)
+	Game.press(R)
+	for i: int in 3 + Game.JUNCTION_PAUSE_TICKS + 2:
+		Game._advance()
+	assert_eq(Game.state.player, Vector2i(6, 2), "one pause, then straight on")
 
 
 func test_standing_still_gets_no_help() -> void:
@@ -109,15 +175,6 @@ func test_standing_still_gets_no_help() -> void:
 	assert_eq(Game.state.player, Vector2i(3, 2), "no walking off on its own")
 
 
-func test_assist_stops_after_it_bumps() -> void:
-	_load(JUNCTION)
-	_walk(5)
-	_turn_up()
-	Game._advance()
-	Game._advance()
-	assert_eq(Game.state.player, Vector2i(6, 2), "still against the wall, not drifting back")
-
-
 func test_it_wont_walk_you_into_a_pit() -> void:
 	_load(["#########", "####.####", "#@._....#", "#########"])
 	_walk(1)
@@ -125,15 +182,6 @@ func test_it_wont_walk_you_into_a_pit() -> void:
 	Game._advance()
 	assert_true(Game.state.alive)
 	assert_eq(Game.state.player, Vector2i(2, 2))
-
-
-func test_it_wont_step_back_onto_cracked_floor() -> void:
-	_load(["#########", "###.#####", "#@.=....#", "#########"])
-	_walk(3)
-	assert_eq(Game.state.player, Vector2i(4, 2))
-	_turn_up()
-	Game._advance()
-	assert_eq(Game.state.player, Vector2i(4, 2))
 
 
 func test_it_wont_push_an_object_for_you() -> void:

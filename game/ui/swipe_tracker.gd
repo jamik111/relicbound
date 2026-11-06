@@ -8,6 +8,8 @@ extends RefCounted
 ## STICK (floating virtual stick): the touch-down point is the stick centre. Outside the dead zone the
 ## dominant axis of the offset is held; back inside the dead zone nothing is held.
 
+## How much further than a turn a swipe has to go to reverse.
+const REVERSE_FACTOR: float = 2.0
 ## How much bigger the sideways part of the stick must be than the forward part to turn.
 const STICK_TURN_RATIO: float = 1.25
 
@@ -37,12 +39,12 @@ func move(pos: Vector2) -> SimStep.Intent:
 	var d: Vector2 = pos - origin
 	if mode == Settings.TouchScheme.SWIPE:
 		if d.length() >= threshold:
-			current = direction_of(d)
-			origin = pos
-		elif current != SimStep.Intent.NONE:
-			# Drifting further the way you're already going mustn't count against the next turn.
-			var heading := Vector2(SimStep.DIRECTIONS[current])
-			origin += heading * maxf(0.0, d.dot(heading))
+			var next: SimStep.Intent = direction_of(d)
+			# A resting thumb rocks back and forth: reversing takes a deliberate swipe.
+			if current == SimStep.Intent.NONE or Vector2(SimStep.DIRECTIONS[next]) != -Vector2(SimStep.DIRECTIONS[current]) \
+					or d.length() >= threshold * REVERSE_FACTOR:
+				current = next
+				origin = pos
 	elif d.length() < dead_zone:
 		current = SimStep.Intent.NONE
 	else:

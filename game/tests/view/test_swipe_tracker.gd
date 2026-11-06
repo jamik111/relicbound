@@ -38,18 +38,20 @@ func test_swipe_turns_after_new_threshold() -> void:
 	assert_eq(_t.move(Vector2(140, 60)), SimStep.Intent.UP)
 
 
-func test_swipe_drifting_forward_doesnt_spoil_the_next_turn() -> void:
+## Playtest 5: "chaotic". None of these small thumb movements should change where you're going.
+func test_swipe_a_rocking_thumb_doesnt_reverse() -> void:
 	_t.begin(Vector2(100, 100))
 	_t.move(Vector2(140, 100))
-	_t.move(Vector2(165, 100))  # 25 px further right: still under the threshold, and now ignored
-	assert_eq(_t.move(Vector2(165, 65)), SimStep.Intent.UP, "the turn counts from where the finger is")
+	assert_eq(_t.move(Vector2(165, 100)), SimStep.Intent.RIGHT)
+	assert_eq(_t.move(Vector2(130, 100)), SimStep.Intent.RIGHT, "35 px back is a rock, not a reverse")
+	assert_eq(_t.move(Vector2(160, 100)), SimStep.Intent.RIGHT)
 
 
-func test_swipe_reverse_still_works_after_drifting_forward() -> void:
+func test_swipe_a_slanted_forward_drag_doesnt_turn() -> void:
 	_t.begin(Vector2(100, 100))
 	_t.move(Vector2(140, 100))
-	_t.move(Vector2(165, 100))
-	assert_eq(_t.move(Vector2(130, 100)), SimStep.Intent.LEFT)
+	for i: int in range(1, 11):
+		assert_eq(_t.move(Vector2(140 + i * 20, 100 - i * 9)), SimStep.Intent.RIGHT, "step %d" % i)
 
 
 func test_stick_near_the_diagonal_doesnt_flip() -> void:
@@ -70,7 +72,7 @@ func test_stick_reverses_at_once() -> void:
 func test_swipe_reverse() -> void:
 	_t.begin(Vector2(100, 100))
 	_t.move(Vector2(140, 100))
-	assert_eq(_t.move(Vector2(105, 100)), SimStep.Intent.LEFT)
+	assert_eq(_t.move(Vector2(75, 100)), SimStep.Intent.LEFT, "a long swipe back reverses")
 
 
 func test_end_releases() -> void:
