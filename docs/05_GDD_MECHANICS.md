@@ -173,7 +173,12 @@ Stars aren't used. Collectibles drive progress: 60% of gems across a world unloc
 - **Gamepad:** stick/D-pad, A = tool, LB/RB = switch, Y = rewind.
 - Input buffer: the last direction pressed before the next allowed step wins, so a quick tap is never lost.
 - **Corner assist (playtest 4: corners were hard to manage, and a slip can cost a statue):** while walking, a turn into a
-  wall up to 2 tiles before an opening keeps you walking to it, and a turn 1 tile past an opening steps you back. It never
-  walks you onto a pit, spikes, cracked floor, dirt or an object, and never turns you into a pit. It only changes the
-  inputs sent, so sim rules and replays are unaffected. Swipe ignores forward finger drift, and the stick won't flip
-  direction near a diagonal. **Not proven yet:** both need testing by feel on a phone, especially the step back.
+  wall up to 2 tiles before an opening keeps you walking to it. It never walks you onto a pit, spikes, cracked floor, dirt
+  or an object, never turns you into a pit, and never moves you backwards. It only changes the inputs sent, so sim rules
+  and replays are unaffected.
+- **Junction pause (playtest 5: "I keep passing the corners"):** a held walk waits 0.5 s on a tile where a new way opens.
+  Turning goes at once, and lifting and swiping the same way again carries straight on. Corners stop being a reflex test.
+- **Swipe stays calm (playtest 5: "chaotic"):** reversing takes twice the swipe of a turn, so a rocking thumb can't do it.
+  The stick won't flip direction near a diagonal. Rejected after trying them: moving the swipe anchor with forward drift
+  (slanted drags turned by accident) and an automatic step back after a late turn (it moved you unasked).
+  **Not proven yet:** all of this needs testing by feel on a phone. Swipe vs stick as the default is still open.
