@@ -52,7 +52,7 @@ Multiplayer · user-made levels (v1.5) · open world · free-form physics puzzle
 | PM-2 | I can try a demo in my browser | P2 | World 1 web demo (Compatibility renderer) ≤ 40 MB; ends with a "Get it on Google Play" button |
 | PM-3 | My progress syncs | P1 | Local save is the source of truth; optional account sync; conflicts resolve by most progress |
 | PM-4 | I buy the full game once | P0 | Native IAP on the stores; Stripe or a portal SDK on the web; restore purchase works |
-| PM-5 | I control it my way | P0 | Touch: swipe or virtual stick (setting); keyboard; gamepad. Every control can be remapped |
+| PM-5 | I control it my way | P0 | Touch: D-pad by default, or swipe or virtual stick (setting); keyboard; gamepad. Every control can be remapped |
 | PM-6 | It's accessible | P1 | Colour-blind safe key colours (shape + colour), subtitles, reduce-motion, assist mode (slower sim, more rewinds) |
 | PM-7 | It's in my language | P1 | All strings in an i18n table; 9 launch languages |
 
@@ -82,6 +82,6 @@ North star: **levels completed per weekly active player**. Supporting metrics: p
 See `08_ROADMAP.md`: prototype → vertical slice → content alpha → beta (soft launch) → 1.0.
 
 ## 10. Open questions
-- Q1: Swipe or virtual stick as the touch default? A/B test it in the vertical slice.
+- Q1: Touch default? D-pad for now (playtest 5: swipe made moves the player didn't intend). Confirm with Gate B testers.
 - Q2: Real-time only, or an optional "turn mode" for accessibility? (Leaning towards assist mode: the sim waits for input.)
 - Q3: Web storefront: our own (Stripe) vs portals (Poki/CrazyGames revenue share)?

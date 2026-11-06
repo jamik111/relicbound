@@ -43,7 +43,7 @@ var _held: Array[SimStep.Intent] = []
 var _pending: SimStep.Intent = SimStep.Intent.NONE
 ## Ticks until the player may move again.
 var _move_cooldown: int = 0
-## Direction of the last real step, NONE when standing still (CornerAssist).
+## Direction of the last real step, NONE when standing still.
 var _walking: SimStep.Intent = SimStep.Intent.NONE
 ## The junction this walk has already paused at, and the ticks of that pause still to run.
 var _paused_at: Vector2i = NO_CELL
@@ -288,18 +288,15 @@ func _take_intent() -> SimStep.Intent:
 	if want == _walking and not fresh_press and _waiting_at_junction():
 		return SimStep.Intent.NONE
 	_junction_wait = 0
-	var intent: SimStep.Intent = CornerAssist.resolve(state, want, _walking)
-	if intent != want:
-		_pending = want
-	var blocked: bool = CornerAssist.is_blocked(state, state.player + SimStep.DIRECTIONS[intent])
-	_walking = SimStep.Intent.NONE if blocked else intent
+	var blocked: bool = Junctions.is_blocked(state, state.player + SimStep.DIRECTIONS[want])
+	_walking = SimStep.Intent.NONE if blocked else want
 	_move_cooldown = move_interval_ticks - 1
-	return intent
+	return want
 
 
 ## True while a held walk should wait at a junction it has just reached.
 func _waiting_at_junction() -> bool:
-	if _paused_at != state.player and CornerAssist.is_new_opening(state, _walking):
+	if _paused_at != state.player and Junctions.is_new_opening(state, _walking):
 		_paused_at = state.player
 		_junction_wait = JUNCTION_PAUSE_TICKS
 	if _junction_wait <= 0:

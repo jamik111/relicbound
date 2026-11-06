@@ -172,13 +172,17 @@ Stars aren't used. Collectibles drive progress: 60% of gems across a world unloc
 - **Keyboard:** WASD/arrows, Space = tool, Q/E = switch tool, R = rewind, Backspace = restart room, Esc = pause.
 - **Gamepad:** stick/D-pad, A = tool, LB/RB = switch, Y = rewind.
 - Input buffer: the last direction pressed before the next allowed step wins, so a quick tap is never lost.
-- **Corner assist (playtest 4: corners were hard to manage, and a slip can cost a statue):** while walking, a turn into a
-  wall up to 2 tiles before an opening keeps you walking to it. It never walks you onto a pit, spikes, cracked floor, dirt
-  or an object, never turns you into a pit, and never moves you backwards. It only changes the inputs sent, so sim rules
-  and replays are unaffected.
+- **The D-pad is the default (playtest 5: "swipe does moves that I didn't do"):** four fixed arrows in the bottom left
+  corner, opposite Rewind. Press and you move, lift and you stop, and a touch anywhere else does nothing. Swipe and Stick
+  remain on the in-level button.
+- **The game never moves you unasked.** A slip here can cost a statue, so controls must not guess. Tried and rejected: an
+  automatic walk to the next opening after an early turn, an automatic step back after a late one, and moving the swipe
+  anchor with forward drift (slanted drags turned by accident).
 - **Junction pause (playtest 5: "I keep passing the corners"):** a held walk waits 0.5 s on a tile where a new way opens.
-  Turning goes at once, and lifting and swiping the same way again carries straight on. Corners stop being a reflex test.
-- **Swipe stays calm (playtest 5: "chaotic"):** reversing takes twice the swipe of a turn, so a rocking thumb can't do it.
-  The stick won't flip direction near a diagonal. Rejected after trying them: moving the swipe anchor with forward drift
-  (slanted drags turned by accident) and an automatic step back after a late turn (it moved you unasked).
-  **Not proven yet:** all of this needs testing by feel on a phone. Swipe vs stick as the default is still open.
+  Turning goes at once, and lifting and pressing the same way again carries straight on. Corners stop being a reflex test.
+- **Swipe and Stick stay calm:** a swipe reverses only at twice the distance of a turn, so a rocking thumb can't do it, and
+  the stick won't flip direction near a diagonal.
+- **Gyroscope (a tester's friend suggested it): not for movement.** Tilt is imprecise, a phone is never quite still, and
+  "thinking is free" needs the player to stand still for as long as they like. It also fails lying down or on a bus. It
+  may suit a one-off puzzle later, such as World 5's rooms where gravity is relative.
+- **Not proven yet:** the D-pad's size and position, and the 0.5 s pause, need testing by feel on a phone.
