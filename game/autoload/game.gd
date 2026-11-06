@@ -39,6 +39,8 @@ var _held: Array[SimStep.Intent] = []
 var _pending: SimStep.Intent = SimStep.Intent.NONE
 ## Ticks until the player may move again.
 var _move_cooldown: int = 0
+## Direction of the last real step, NONE when standing still (CornerAssist).
+var _walking: SimStep.Intent = SimStep.Intent.NONE
 var _history := RewindBuffer.new(REWIND_TICKS)
 ## State saved when the last checkpoint idol was lit (or the level start). Respawn restores it.
 var _checkpoint: SimState
@@ -85,6 +87,7 @@ func load_level(path: String) -> bool:
 	_accumulator = 0.0
 	alpha = 0.0
 	_pending = SimStep.Intent.NONE
+	_walking = SimStep.Intent.NONE
 	_held.clear()
 	_history.clear()
 	_checkpoint = s
@@ -167,6 +170,7 @@ func _replace_state(s: SimState) -> void:
 	state = s
 	prev_state = s
 	_pending = SimStep.Intent.NONE
+	_walking = SimStep.Intent.NONE
 	_move_cooldown = 0
 	_checkpoint_pending = false
 	_respawn_timer = -1.0
@@ -260,12 +264,19 @@ func _take_intent() -> SimStep.Intent:
 	if _move_cooldown > 0:
 		_move_cooldown -= 1
 		return SimStep.Intent.NONE
-	var intent: SimStep.Intent = _pending
-	if intent == SimStep.Intent.NONE and not _held.is_empty():
-		intent = _held[0]
+	var want: SimStep.Intent = _pending
+	if want == SimStep.Intent.NONE and not _held.is_empty():
+		want = _held[0]
 	_pending = SimStep.Intent.NONE
-	if intent != SimStep.Intent.NONE:
-		_move_cooldown = move_interval_ticks - 1
+	if want == SimStep.Intent.NONE:
+		_walking = SimStep.Intent.NONE
+		return SimStep.Intent.NONE
+	var intent: SimStep.Intent = CornerAssist.resolve(state, want, _walking)
+	if intent != want:
+		_pending = want
+	var blocked: bool = CornerAssist.is_blocked(state, state.player + SimStep.DIRECTIONS[intent])
+	_walking = SimStep.Intent.NONE if blocked else intent
+	_move_cooldown = move_interval_ticks - 1
 	return intent
 
 
