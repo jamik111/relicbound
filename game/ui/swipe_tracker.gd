@@ -53,6 +53,8 @@ func move(pos: Vector2) -> SimStep.Intent:
 				origin = pos
 	elif d.length() < dead_zone:
 		current = SimStep.Intent.NONE
+	elif mode == Settings.TouchScheme.DPAD:
+		current = direction_of(d)  # a fixed pad turns the moment the thumb crosses into the next arrow
 	else:
 		current = _stick_direction(d)
 	return current

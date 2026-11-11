@@ -12,11 +12,19 @@ const STICK_DEAD_ZONE: float = 0.25  # fraction of the stick radius
 const DPAD_RADIUS: float = 0.2
 const DPAD_MARGIN: float = 0.03
 const DPAD_DEAD_ZONE: float = 0.2  # fraction of the D-pad radius
-const DPAD_ARROW_REACH: float = 0.72  # how far out each arrow's tip sits, as a fraction of the radius
-const DPAD_ARROW_SIZE: float = 0.26
-const DPAD_ALPHA: float = 0.14
-const DPAD_ARROW_ALPHA: float = 0.5
-const DPAD_PRESSED_ALPHA: float = 0.95
+## Looks like a modern fixed joystick (playtest 6: arrows looked old-fashioned) but still steers in four directions.
+## Fractions of the radius unless noted.
+const JOY_KNOB: float = 0.36
+const JOY_KNOB_TRAVEL: float = 0.55
+const JOY_CHEVRON_AT: float = 0.8
+const JOY_CHEVRON_SIZE: float = 0.1
+const JOY_RIM_WIDTH: float = 7.0  # px
+const JOY_RIM_GAP: float = 0.12  # radians left between the four rim segments
+const JOY_FILL: Color = Color(1, 1, 1, 0.06)
+const JOY_RING: Color = Color(1, 1, 1, 0.28)
+const JOY_IDLE: Color = Color(1, 1, 1, 0.32)
+## The same warm gold as the Rewind prompt, so "active" reads the same everywhere.
+const JOY_ACTIVE: Color = Color(1.0, 0.8, 0.35, 0.95)
 
 var _tracker := SwipeTracker.new()
 var _held: SimStep.Intent = SimStep.Intent.NONE
@@ -103,13 +111,24 @@ func _draw_dpad() -> void:
 	var screen: Vector2 = get_viewport_rect().size
 	var center: Vector2 = dpad_center(screen)
 	var r: float = DPAD_RADIUS * screen.y
-	draw_circle(center, r, Color(1, 1, 1, DPAD_ALPHA))
-	draw_arc(center, r, 0.0, TAU, 48, Color(1, 1, 1, 0.35), 3.0)
+	draw_circle(center, r, JOY_FILL)
+	draw_arc(center, r, 0.0, TAU, 64, JOY_RING, 2.0, true)
 	for intent: SimStep.Intent in [SimStep.Intent.UP, SimStep.Intent.DOWN, SimStep.Intent.LEFT, SimStep.Intent.RIGHT]:
 		var dir := Vector2(SimStep.DIRECTIONS[intent])
+		var active: bool = intent == _held
+		var color: Color = JOY_ACTIVE if active else JOY_IDLE
+		if active:
+			var a: float = dir.angle()
+			draw_arc(center, r - JOY_RIM_WIDTH / 2.0, a - PI / 4.0 + JOY_RIM_GAP, a + PI / 4.0 - JOY_RIM_GAP, 16, color,
+				JOY_RIM_WIDTH, true)
 		var side := Vector2(dir.y, dir.x)
-		var tip: Vector2 = center + dir * r * DPAD_ARROW_REACH
-		var size: float = r * DPAD_ARROW_SIZE
-		var alpha: float = DPAD_PRESSED_ALPHA if intent == _held else DPAD_ARROW_ALPHA
-		draw_colored_polygon(PackedVector2Array([tip, tip - dir * size + side * size, tip - dir * size - side * size]),
-			Color(1, 1, 1, alpha))
+		var tip: Vector2 = center + dir * r * JOY_CHEVRON_AT
+		var size: float = r * JOY_CHEVRON_SIZE
+		draw_polyline(PackedVector2Array([tip - dir * size + side * size, tip, tip - dir * size - side * size]), color,
+			3.0, true)
+	var knob: Vector2 = center
+	if _tracker.active and _held != SimStep.Intent.NONE:
+		knob += (_tracker.position - center).limit_length(r * JOY_KNOB_TRAVEL)
+	var held: bool = _held != SimStep.Intent.NONE
+	draw_circle(knob, r * JOY_KNOB, Color(1, 1, 1, 0.3 if held else 0.16))
+	draw_arc(knob, r * JOY_KNOB, 0.0, TAU, 48, JOY_ACTIVE if held else JOY_RING, 2.5, true)
