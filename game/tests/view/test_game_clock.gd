@@ -67,12 +67,67 @@ func test_tap_during_cooldown_waits_instead_of_vanishing() -> void:
 	Game.press(SimStep.Intent.RIGHT)
 	Game.release(SimStep.Intent.RIGHT)
 	Game._advance()
-	Game.press(SimStep.Intent.LEFT)
-	Game.release(SimStep.Intent.LEFT)
+	Game.press(SimStep.Intent.RIGHT)  # not a reversal: those skip the cooldown
+	Game.release(SimStep.Intent.RIGHT)
 	Game._advance()
 	assert_eq(Game.state.player, Vector2i(2, 1), "cooling down")
 	Game._advance()
-	assert_eq(Game.state.player, Vector2i(1, 1), "the buffered tap happens")
+	assert_eq(Game.state.player, Vector2i(3, 1), "the buffered tap happens")
+
+
+# --- Responsiveness (playtest 6: "if I move left and get back, it has to follow, or the dart hits me") ---
+
+func _start_clock() -> void:
+	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
+	Game.running = true
+
+
+func test_a_press_moves_on_the_next_frame_not_the_next_tick() -> void:
+	_start_clock()
+	Game._process(0.001)  # a frame with almost no time passed
+	var tick: int = Game.state.tick
+	Game.press(SimStep.Intent.RIGHT)
+	Game._process(0.016)
+	assert_eq(Game.state.player, Vector2i(2, 1), "one frame after the press")
+	assert_eq(Game.state.tick, tick + 1, "exactly one tick, no catch-up burst")
+
+
+func test_reversing_skips_the_walking_cadence() -> void:
+	_start_clock()
+	Game.press(SimStep.Intent.RIGHT)
+	Game._process(0.016)
+	Game.release(SimStep.Intent.RIGHT)
+	assert_eq(Game.state.player, Vector2i(2, 1))
+	Game.press(SimStep.Intent.LEFT)
+	Game._process(0.016)
+	assert_eq(Game.state.player, Vector2i(1, 1), "straight back, no cooldown")
+
+
+func test_other_turns_still_keep_the_walking_cadence() -> void:
+	_start_clock()
+	Game.press(SimStep.Intent.RIGHT)
+	Game._process(0.016)
+	Game.release(SimStep.Intent.RIGHT)
+	Game.press(SimStep.Intent.DOWN)
+	Game._process(0.016)
+	assert_eq(Game.state.player, Vector2i(2, 1), "a sideways step waits for the cooldown")
+
+
+func test_holding_a_direction_still_walks_at_walking_speed() -> void:
+	_start_clock()
+	Game.press(SimStep.Intent.RIGHT)
+	for i: int in 10:
+		Game._process(0.1)
+	assert_lt(Game.state.player.x - 1, 7, "at most one tile per two ticks after the first step")
+
+
+func test_no_early_tick_while_dead() -> void:
+	_start_clock()
+	Game.state.alive = false
+	var tick: int = Game.state.tick
+	Game.press(SimStep.Intent.RIGHT)
+	Game._process(0.016)
+	assert_eq(Game.state.tick, tick)
 
 
 func test_prev_state_kept_for_interpolation() -> void:

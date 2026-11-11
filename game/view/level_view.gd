@@ -317,7 +317,8 @@ func interpolate(alpha: float) -> void:
 			node.rotation.y = t * GEM_SPIN_SPEED
 			node.position.y += sin(t * 3.0 + id) * GEM_BOB_HEIGHT
 	var progress: float = clampf((_cur.tick - _player_move_tick + alpha) / player_move_ticks, 0.0, 1.0)
-	_player.position = _player_from.lerp(cell_to_world(_cur.player), progress)
+	# Ease out: most of the step shows at once, so the character reacts the moment you press (playtest 6).
+	_player.position = _player_from.lerp(cell_to_world(_cur.player), 1.0 - (1.0 - progress) * (1.0 - progress))
 	_player.rotation.y = atan2(float(_cur.facing.x), float(_cur.facing.y))
 	_player.scale = Vector3(1.2, 0.25, 1.2) if not _cur.alive else Vector3.ONE
 	for e: SimEnemy in _cur.enemies:

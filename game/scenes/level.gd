@@ -9,7 +9,7 @@ const NO_REWINDS_TEXT: String = "No rewinds left. Tap Restart if you're stuck."
 const SCARS_TEXT: String = "The temple remembers %d of your deaths (max %d), even if you leave."
 const NO_FORGETS_TEXT: String = "Stuck? Tap Back, win any level for a Forget, then return."
 ## Settings.TouchScheme order.
-const CONTROL_NAMES: Array[String] = ["Swipe", "Stick", "D-pad"]
+const CONTROL_NAMES: Array[String] = ["Swipe", "Float stick", "Joystick"]
 const REWIND_PULSE_SCALE: Vector2 = Vector2(1.18, 1.18)
 const REWIND_PULSE_SECONDS: float = 0.35
 const REWIND_PROMPT_TINT: Color = Color(2.2, 1.7, 0.5)

@@ -1,5 +1,6 @@
 extends GutTest
-## The fixed D-pad: press and you move, lift and you stop, and a touch anywhere else does nothing.
+## The fixed joystick (Settings.TouchScheme.DPAD): press and you move, lift and you stop, and a touch anywhere else
+## does nothing.
 
 const LEVEL: String = "res://levels/test/test_01_walk_dig.json"
 const SCREEN := Vector2(1280, 720)
@@ -90,6 +91,20 @@ func test_a_finger_resting_in_place_keeps_its_direction() -> void:
 	_touch(_center() + Vector2.RIGHT * _radius() * 0.7)
 	_drag(_center() + Vector2.RIGHT * _radius() * 0.7 + Vector2(3, -4))
 	assert_eq(Game._held, [SimStep.Intent.RIGHT] as Array[SimStep.Intent])
+
+
+## Playtest 6: no hysteresis on the fixed pad. Crossing into the next arrow turns at once.
+func test_crossing_the_diagonal_turns_at_once() -> void:
+	_touch(_center() + Vector2(_radius() * 0.6, 0.0))
+	_drag(_center() + Vector2(_radius() * 0.45, -_radius() * 0.5))
+	assert_eq(Game._held, [SimStep.Intent.UP] as Array[SimStep.Intent])
+
+
+func test_the_knob_follows_the_thumb_only_while_held() -> void:
+	_touch(_center() + Vector2.RIGHT * _radius() * 0.7)
+	assert_true(_controls._tracker.active)
+	_touch(_center(), false)
+	assert_false(_controls._tracker.active)
 
 
 func test_the_dpad_is_the_default_scheme() -> void:

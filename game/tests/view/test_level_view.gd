@@ -33,7 +33,7 @@ func test_interpolates_between_ticks() -> void:
 	_view.interpolate(0.0)
 	assert_eq(_view.player_world_position(), Vector3(1, 0, 1))
 	_view.interpolate(0.5)
-	assert_almost_eq(_view.player_world_position().x, 1.5, 0.001)
+	assert_almost_eq(_view.player_world_position().x, 1.75, 0.001, "eased out: ahead of halfway (playtest 6)")
 	_view.interpolate(1.0)
 	assert_eq(_view.player_world_position(), Vector3(2, 0, 1))
 
@@ -45,7 +45,7 @@ func test_walk_step_spans_the_move_interval() -> void:
 	var moved: StepResult = H.step(s, H.R)
 	_view.show_state(s, moved.state, moved.events)
 	_view.interpolate(1.0)
-	assert_almost_eq(_view.player_world_position().x, 1.5, 0.001, "halfway after one of two ticks")
+	assert_almost_eq(_view.player_world_position().x, 1.75, 0.001, "eased out: 3/4 of the way after one of two ticks")
 	var idle: StepResult = H.step(moved.state)
 	_view.show_state(moved.state, idle.state, idle.events)
 	_view.interpolate(1.0)

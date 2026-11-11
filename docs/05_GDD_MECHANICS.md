@@ -172,17 +172,23 @@ Stars aren't used. Collectibles drive progress: 60% of gems across a world unloc
 - **Keyboard:** WASD/arrows, Space = tool, Q/E = switch tool, R = rewind, Backspace = restart room, Esc = pause.
 - **Gamepad:** stick/D-pad, A = tool, LB/RB = switch, Y = rewind.
 - Input buffer: the last direction pressed before the next allowed step wins, so a quick tap is never lost.
-- **The D-pad is the default (playtest 5: "swipe does moves that I didn't do"):** four fixed arrows in the bottom left
-  corner, opposite Rewind. Press and you move, lift and you stop, and a touch anywhere else does nothing. Swipe and Stick
-  remain on the in-level button.
+- **A fixed joystick is the default (playtest 5: "swipe does moves that I didn't do"; playtest 6: arrows looked
+  old-fashioned):** a ring in the bottom left corner, opposite Rewind, with a knob that follows the thumb and a gold rim
+  on the active direction. It steers in four directions: press and you move, lift and you stop, and a touch anywhere else
+  does nothing. Swipe and Float stick remain on the in-level button.
+- **Responsiveness comes first (playtest 6: "if I move left and get back, it has to follow, or the dart hits me"):** a
+  press that can act runs the next tick on the next frame instead of waiting for the 10 Hz clock. Stepping straight back
+  skips the walking cadence, because it's a dodge. The character shows most of each step at once (ease out). Android
+  input is flushed more than once per frame. None of this changes the sim or replays: it only changes when ticks run and
+  which inputs reach them. Sideways turns and held walks keep the 5 tiles/s speed.
 - **The game never moves you unasked.** A slip here can cost a statue, so controls must not guess. Tried and rejected: an
   automatic walk to the next opening after an early turn, an automatic step back after a late one, and moving the swipe
   anchor with forward drift (slanted drags turned by accident).
-- **Junction pause (playtest 5: "I keep passing the corners"):** a held walk waits 0.5 s on a tile where a new way opens.
-  Turning goes at once, and lifting and pressing the same way again carries straight on. Corners stop being a reflex test.
+- **No junction pause (removed in playtest 6):** a 0.5 s stop where a new way opened helped with corners, but it held the
+  player still for half a second, including in a dart row. Responsiveness won.
 - **Swipe and Stick stay calm:** a swipe reverses only at twice the distance of a turn, so a rocking thumb can't do it, and
   the stick won't flip direction near a diagonal.
 - **Gyroscope (a tester's friend suggested it): not for movement.** Tilt is imprecise, a phone is never quite still, and
   "thinking is free" needs the player to stand still for as long as they like. It also fails lying down or on a bus. It
   may suit a one-off puzzle later, such as World 5's rooms where gravity is relative.
-- **Not proven yet:** the D-pad's size and position, and the 0.5 s pause, need testing by feel on a phone.
+- **Not proven yet:** how responsive it feels on a phone. Input-to-screen latency hasn't been measured on the device.
