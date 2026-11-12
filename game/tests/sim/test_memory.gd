@@ -13,6 +13,9 @@ const LEVEL_9: String = "res://levels/greybox/level_09_long_way_round.json"
 const SHIELD_9 := Vector2i(3, 3)
 const LOWER_PLATE_9 := Vector2i(19, 3)
 const UPPER_PLATE_9 := Vector2i(18, 1)
+const LEVEL_10: String = "res://levels/greybox/level_10_three_falls.json"
+const SHIELD_10 := Vector2i(3, 1)
+const PLATES_10: Array[Vector2i] = [Vector2i(2, 5), Vector2i(5, 5), Vector2i(8, 5)]
 
 
 func _remembering(rows: PackedStringArray) -> SimState:
@@ -285,3 +288,33 @@ func test_level_7_far_plate_then_near_plate_wins() -> void:
 	var far: SimState = RuleMemory.scarred(LevelLoader.load_state(LEVEL_7), FAR_PLATE)
 	assert_true(_explore(far)["deaths"].has(NEAR_PLATE))
 	assert_true(_explore(RuleMemory.scarred(far, NEAR_PLATE))["won"])
+
+
+# --- Level 10: only three scars last, so the shield must be the oldest one ---
+
+func _level_10(scars: Array[Vector2i] = []) -> SimState:
+	var s: SimState = LevelLoader.load_state(LEVEL_10)
+	for cell: Vector2i in scars:
+		s = RuleMemory.scarred(s, cell)
+	return s
+
+
+func test_level_10_the_corridor_needs_a_shield() -> void:
+	assert_false(_explore(_level_10(), Game.MOVE_INTERVAL_TICKS)["gem"])
+	assert_true(_explore(_level_10([SHIELD_10]), Game.MOVE_INTERVAL_TICKS)["gem"])
+
+
+func test_level_10_two_plates_and_the_shield_dont_open_the_gate() -> void:
+	assert_false(_explore(_level_10([SHIELD_10, PLATES_10[0], PLATES_10[1]]))["won"])
+
+
+func test_level_10_a_plate_before_the_shield_fades_first() -> void:
+	var s: SimState = _level_10([PLATES_10[0], SHIELD_10, PLATES_10[1], PLATES_10[2]])
+	assert_eq(s.object_at(PLATES_10[0]), Tiles.Obj.NONE, "the oldest scar is gone")
+	assert_false(_explore(s)["won"])
+
+
+func test_level_10_three_plate_scars_open_the_gate_but_cost_the_shield() -> void:
+	var s: SimState = _level_10([SHIELD_10, PLATES_10[0], PLATES_10[1], PLATES_10[2]])
+	assert_eq(s.object_at(SHIELD_10), Tiles.Obj.NONE, "the shield faded")
+	assert_false(_explore(s, Game.MOVE_INTERVAL_TICKS)["gem"], "so the gem has to be carried in before the last fall")
