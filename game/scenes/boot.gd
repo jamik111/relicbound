@@ -17,6 +17,7 @@ func _ready() -> void:
 	print("Twicefall boot OK (v%s, %s, physics=%s)" % [
 		version, renderer, ProjectSettings.get_setting("physics/3d/physics_engine")])
 
+	_add_button("Enter the temple", _play.bind(TempleHub.PATH))
 	for dir: String in LEVEL_DIRS:
 		for path: String in LevelLoader.levels_in(dir):
 			var data: Dictionary = LevelLoader.load_data(path)
@@ -41,4 +42,5 @@ func _add_button(text: String, on_pressed: Callable) -> void:
 
 func _play(path: String) -> void:
 	Game.level_path = path
+	Game.hub_return_room = ""
 	get_tree().change_scene_to_file(LEVEL_SCENE)

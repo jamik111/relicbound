@@ -1,0 +1,52 @@
+{
+	"id": "temple",
+	"size": [19, 10],
+	"meta": {
+		"name": "The temple",
+		"gems_required": 0,
+		"seed": 1,
+		"hint": "Each door is a chamber. Solve one and the next door opens.",
+		"rooms": [
+			{"door": [3, 7], "level": "res://levels/greybox/level_01_hold_the_gate.json"},
+			{"door": [7, 7], "level": "res://levels/greybox/level_02_one_way_bridge.json"},
+			{"door": [11, 7], "level": "res://levels/greybox/level_03_take_the_hit.json"},
+			{"door": [3, 4], "level": "res://levels/greybox/level_04_two_echoes.json"},
+			{"door": [7, 4], "level": "res://levels/greybox/level_05_everything.json"},
+			{"door": [11, 4], "level": "res://levels/greybox/level_06_last_across.json"},
+			{"door": [3, 1], "level": "res://levels/greybox/level_07_where_you_fall.json"},
+			{"door": [7, 1], "level": "res://levels/greybox/level_08_before_you_fall.json"},
+			{"door": [11, 1], "level": "res://levels/greybox/level_09_long_way_round.json"},
+			{"door": [15, 1], "level": "res://levels/greybox/level_10_three_falls.json"}
+		],
+		"seals": [
+			{"after": "res://levels/greybox/level_03_take_the_hit.json", "cells": [[9, 6], [9, 7]]},
+			{"after": "res://levels/greybox/level_06_last_across.json", "cells": [[9, 3], [9, 4]]}
+		]
+	},
+	"layers": {
+		"terrain": [
+			"###################",
+			"###E###E###E###E###",
+			"#.................#",
+			"#########.#########",
+			"###E###E#.#E#######",
+			"#.................#",
+			"#########.#########",
+			"###E###E#.#E#######",
+			"#.................#",
+			"###################"
+		],
+		"objects": [
+			"...................",
+			"...................",
+			"...................",
+			"...................",
+			"...................",
+			"...................",
+			"...................",
+			"...................",
+			".........@.........",
+			"..................."
+		]
+	}
+}
