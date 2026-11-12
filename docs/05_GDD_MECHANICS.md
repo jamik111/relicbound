@@ -181,7 +181,7 @@ Stars aren't used. Collectibles drive progress: 60% of gems across a world unloc
   press that can act runs the next tick on the next frame instead of waiting for the 10 Hz clock. Stepping straight back
   skips the walking cadence, because it's a dodge. The character shows most of each step at once (ease out). Android
   input is flushed more than once per frame. None of this changes the sim or replays: it only changes when ticks run and
-  which inputs reach them. Held walks move 10 tiles/s after a 0.1 s hold delay (delayed auto-repeat, as in Tetris or Baba Is You), so a tap is always exactly one step and never overshoots. Each step is drawn as a 0.1 s hop with a small arc, a stretch in the air and a squash on landing (the Crossy Road feel); this is view only.
+  which inputs reach them. Held walks move 10 tiles/s after a 0.1 s hold delay (delayed auto-repeat, as in Tetris or Baba Is You), so a tap is always exactly one step and never overshoots. Each step is drawn as a quick walk: a slight bob and a forward lean while moving that settles when you stop (view only; a hop was tried and dropped in playtest 8 because a person doesn't hop).
 - **The game never moves you unasked.** A slip here can cost a statue, so controls must not guess. Tried and rejected: an
   automatic walk to the next opening after an early turn, an automatic step back after a late one, and moving the swipe
   anchor with forward drift (slanted drags turned by accident).

@@ -49,12 +49,12 @@ const SPIKE_SCALES: Array[float] = [0.25, 0.55, 1.0]
 const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
 const PLAYER_DEAD_TINT: Color = Color(1.0, 0.25, 0.2)
 const GEM_SPIN_SPEED: float = 2.5
-## The step is a hop (Crossy Road-like feel): a small arc, a stretch in the air and a squash on landing. View only.
-const HOP_HEIGHT: float = 0.18
-const HOP_STRETCH: float = 0.14
-const HOP_SQUASH: float = 0.2
-## How long the landing squash lasts, in ticks after touching down.
-const LAND_TICKS: float = 0.8
+## A step is a walk, not a hop (playtest 8: "a person won't hop"): a slight bob each step and a forward lean while
+## moving that settles when you stop. View only.
+const STEP_BOB: float = 0.05
+const WALK_LEAN: float = 0.14  # radians
+## How long the lean takes to settle after the last step, in ticks.
+const SETTLE_TICKS: float = 1.5
 const GEM_BOB_HEIGHT: float = 0.06
 const PLATE_ACTIVE_COLOR: Color = Color(1.0, 0.95, 0.4)
 const ECHO_COLOR: Color = Color(0.5, 1.0, 1.0, 0.8)
@@ -322,7 +322,7 @@ func interpolate(alpha: float) -> void:
 			var t: float = Time.get_ticks_msec() / 1000.0
 			node.rotation.y = t * GEM_SPIN_SPEED
 			node.position.y += sin(t * 3.0 + id) * GEM_BOB_HEIGHT
-	_hop(_player, _player_from, cell_to_world(_cur.player), (_cur.tick - _player_move_tick + alpha) / player_move_ticks)
+	_walk(_player, _player_from, cell_to_world(_cur.player), (_cur.tick - _player_move_tick + alpha) / player_move_ticks)
 	_player.rotation.y = atan2(float(_cur.facing.x), float(_cur.facing.y))
 	if not _cur.alive:
 		_player.scale = Vector3(1.2, 0.25, 1.2)
@@ -336,22 +336,22 @@ func interpolate(alpha: float) -> void:
 	for e: SimEcho in _cur.echoes:
 		var view: Dictionary = _echo_views[e.id]
 		var node: Node3D = view["node"]
-		_hop(node, view["from"] as Vector3, cell_to_world(e.cell), (_cur.tick - int(view["tick"]) + alpha) / player_move_ticks)
+		_walk(node, view["from"] as Vector3, cell_to_world(e.cell), (_cur.tick - int(view["tick"]) + alpha) / player_move_ticks)
 		node.rotation.y = atan2(float(e.facing.x), float(e.facing.y))
 
 
-## Places a walker `p` of the way through a step (0..1, more while landing). Ease out across, so most of the step shows
-## at once and the character reacts the moment you press (playtest 6).
-static func _hop(node: Node3D, from: Vector3, to: Vector3, p: float) -> void:
+## Places a walker `p` of the way through a step (0..1, more after it). Ease out across, so most of the step shows at
+## once and the character reacts the moment you press (playtest 6).
+static func _walk(node: Node3D, from: Vector3, to: Vector3, p: float) -> void:
 	var t: float = clampf(p, 0.0, 1.0)
 	node.position = from.lerp(to, 1.0 - (1.0 - t) * (1.0 - t))
+	node.scale = Vector3.ONE
 	if from.is_equal_approx(to):
-		node.scale = Vector3.ONE
+		node.rotation.x = 0.0
 		return
-	node.position.y += HOP_HEIGHT * 4.0 * t * (1.0 - t)
-	var land: float = clampf((p - 1.0) / LAND_TICKS, 0.0, 1.0)
-	var k: float = HOP_STRETCH * sin(PI * t) - (HOP_SQUASH * sin(PI * land) if p > 1.0 else 0.0)
-	node.scale = Vector3(1.0 - k * 0.5, 1.0 + k, 1.0 - k * 0.5)
+	node.position.y += STEP_BOB * 4.0 * t * (1.0 - t)
+	var settle: float = clampf((p - 1.0) / SETTLE_TICKS, 0.0, 1.0)
+	node.rotation.x = WALK_LEAN * minf(t * 3.0, 1.0) * (1.0 - settle * settle)
 
 
 static func cell_to_world(c: Vector2i) -> Vector3:
