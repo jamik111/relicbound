@@ -13,10 +13,18 @@ func test_input_encoding_round_trip() -> void:
 
 ## A solution has to be playable by a person, so it can't walk faster than Game's walking cadence.
 func _walks_too_fast(inputs: String) -> bool:
-	var compact: String = inputs.replace(" ", "")
-	for i: int in range(1, compact.length()):
-		if "UDLR".contains(compact[i]) and "UDLR".contains(compact[i - 1]):
-			return true
+	var tick: int = 0
+	var last_move: int = -Game.MOVE_INTERVAL_TICKS
+	for ch: String in inputs:
+		if ch == Replay.HOURGLASS_CHAR or ch == Replay.RESPAWN_CHAR:
+			last_move = tick - Game.MOVE_INTERVAL_TICKS  # Game clears the cooldown after a rewind or respawn
+		elif "UDLR".contains(ch):
+			if tick - last_move < Game.MOVE_INTERVAL_TICKS:
+				return true
+			last_move = tick
+			tick += 1
+		elif ch == ".":
+			tick += 1
 	return false
 
 

@@ -211,7 +211,7 @@ func test_level_8_lighting_the_idol_before_the_gem_loses_the_gem() -> void:
 
 
 func test_level_8_gem_then_idol_keeps_the_gem() -> void:
-	var s: SimState = Replay.run(_level_8(), "R.R.R.U.U.R.R.R.L.L.L.U.. D.R.R.. X")
+	var s: SimState = Replay.run(_level_8(), "RRRUURRRLLLUDRR. X")
 	assert_eq(s.player, IDOL_8)
 	assert_eq(s.gems_collected, 1)
 	assert_eq(s.object_at(FAR_PLATE_8), Tiles.Obj.SCAR)
@@ -219,8 +219,8 @@ func test_level_8_gem_then_idol_keeps_the_gem() -> void:
 
 func test_level_8_the_echo_gives_time_to_walk() -> void:
 	# The solution with a pause before the gate: no run needed.
-	var setup: String = "R.R.R.U.U.R.R.R.L.L.L.U.. D.R.R.. X D.D.D.L.L.L.L.L. H"
-	var s: SimState = Replay.run(_level_8(), setup + "D.D.D.R.R.R.R.R.R." + ".".repeat(20) + "R.R.R.")
+	var setup: String = "RRRUURRRLLLUDRR. X DDDLLLLL H"
+	var s: SimState = Replay.run(_level_8(), setup + "DDDRRRRRR" + ".".repeat(10) + "RRR")
 	assert_true(s.won)
 
 
@@ -270,10 +270,10 @@ func test_level_9_lower_plate_alone_doesnt_open_the_gate() -> void:
 
 
 func test_level_9_there_is_time_to_walk_after_the_hourglass() -> void:
-	var setup: String = ("R.R.U.U.L." + ".".repeat(20) + "X" + "R.R.U.U." + "R.".repeat(16) + "U.U.L.L.L.L.R.R.R.D.."
-		+ "U.L." + ".".repeat(26) + "X" + "D" + "H")
-	var s: SimState = Replay.run(_level_9(), setup + "D." + "L.".repeat(15) + "D.D." + ".".repeat(8) + "R.R.R.")
-	assert_true(s.won, "a 0.8 s pause on the way is fine")
+	var setup: String = ("RRUUL" + ".".repeat(10) + "X" + "RRUU" + "R".repeat(16) + "UULLLLRRRDUL" + ".".repeat(14) + "X"
+		+ "D" + "H")
+	var s: SimState = Replay.run(_level_9(), setup + "D" + "L".repeat(15) + "DD" + ".".repeat(4) + "RRR")
+	assert_true(s.won, "a 0.4 s pause on the way is fine")
 
 
 func test_level_7_near_plate_first_cuts_off_the_far_plate() -> void:

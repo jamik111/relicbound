@@ -12,7 +12,8 @@ const REWIND_CHARGES: int = 3
 const RESPAWN_DELAY: float = 1.0
 ## The player moves at most once per this many ticks: 5 tiles/s at the 10 Hz tick. Objects still fall at 10 tiles/s.
 ## This is an input cadence, not a sim rule, so replays (which record per-tick intents) don't change.
-const MOVE_INTERVAL_TICKS: int = 2
+## Ticks between steps while a direction is held: 1 is one tile per tick (10 a second). Playtest 7 found 2 sluggish.
+const MOVE_INTERVAL_TICKS: int = 1
 ## How far the gamepad's left stick must be pushed before it counts as a direction.
 const STICK_DEAD_ZONE: float = 0.5
 

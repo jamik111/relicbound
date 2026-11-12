@@ -1,11 +1,11 @@
 {
 	"level": "res://levels/greybox/level_08_before_you_fall.json",
 	"note": "Take the gem first, then light the idol, so the save keeps the gem. Then let the dart kill you on the far plate: the scar cuts off the gem's corridor, which no longer matters. Walk to the near plate, use the hourglass, and walk through the gate while the echo holds it.",
-	"inputs": "R.R.R.U.U.R.R.R.L.L.L.U. . D.R.R.. X D.D.D.L.L.L.L.L. H D.D.D.R.R.R.R.R.R.R.R.R.",
+	"inputs": "RRRUURRRLLLUDRR.XDDDLLLLLHDDDRRRRRRRRR",
 	"expect": {
 		"won": true,
 		"alive": true,
 		"gems_collected": 1
 	},
-	"hash": "011b2d27b1883fe9f24096bea4484b18452effd61bbfdf0b23a5a6d88d7e3dfd"
+	"hash": "ea6172c62213bed781ec35ca6c2a34664a28db4d5048e75939c6e4fcebe9306b"
 }
