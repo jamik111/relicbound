@@ -37,6 +37,8 @@ var running: bool = false
 var alpha: float = 0.0
 var rewinds_left: int = REWIND_CHARGES
 var move_interval_ticks: int = MOVE_INTERVAL_TICKS
+## The chamber you last came out of, so the temple puts you back outside its door.
+var hub_return_room: String = ""
 var hold_delay_ticks: int = HOLD_DELAY_TICKS
 ## Ticks left before a held direction starts repeating.
 var _repeat_wait: int = 0
@@ -76,7 +78,8 @@ func tick_rate() -> int:
 
 ## Loads a level and starts its clock. Returns false (and leaves the current level running) on error.
 func load_level(path: String) -> bool:
-	var s: SimState = LevelLoader.load_state(path)
+	var s: SimState = (TempleHub.start_state(Save.solved_levels(), hub_return_room) if path == TempleHub.PATH
+		else LevelLoader.load_state(path))
 	if s == null:
 		return false
 	var rewinds: int = s.hourglass_uses
@@ -109,6 +112,23 @@ func load_level(path: String) -> bool:
 	running = true
 	Events.level_loaded.emit()
 	return true
+
+
+func in_hub() -> bool:
+	return level_path == TempleHub.PATH
+
+
+## Back to the temple, outside the door of the chamber you were in.
+func load_hub() -> bool:
+	if not in_hub():
+		hub_return_room = level_path
+	return load_level(TempleHub.PATH)
+
+
+func _enter_room(room: String) -> void:
+	if room != "":
+		hub_return_room = room
+		load_level(room)
 
 
 func restart() -> void:
@@ -270,8 +290,12 @@ func _advance() -> void:
 			_respawn_timer = RESPAWN_DELAY
 			_checkpoint_pending = false
 		elif e.type == SimEvent.Type.LEVEL_COMPLETED:
-			Save.clear_memory(level_path)
-			Save.earn_forget()
+			if in_hub():
+				_enter_room.call_deferred(TempleHub.room_at(state.player))
+			else:
+				Save.mark_solved(level_path)
+				Save.clear_memory(level_path)
+				Save.earn_forget()
 	if _checkpoint_pending and SimStep.is_settled(state):
 		_checkpoint = state
 		_checkpoint_rewinds = rewinds_left

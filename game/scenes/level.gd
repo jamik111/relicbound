@@ -147,7 +147,8 @@ func _update_hud() -> void:
 	else:
 		_status_label.text = ""
 	_update_echo_prompt()
-	%NextButton.visible = s.won and LevelLoader.next_level(Game.level_path) != ""
+	%NextButton.visible = s.won and not Game.in_hub()
+	%NextButton.text = "Back to the temple"
 
 
 func _echo_status(e: SimEcho) -> String:
@@ -171,9 +172,12 @@ func _update_controls_button() -> void:
 
 
 func _on_next() -> void:
-	Game.load_level(LevelLoader.next_level(Game.level_path))
+	Game.load_hub()
 
 
 func _on_back() -> void:
+	if not Game.in_hub() and Game.hub_return_room != "":
+		Game.load_hub()  # a chamber entered from the temple goes back to it
+		return
 	Game.stop()
 	get_tree().change_scene_to_file(BOOT_SCENE)

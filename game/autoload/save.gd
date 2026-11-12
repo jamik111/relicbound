@@ -66,6 +66,22 @@ func clear_memory(level: String) -> void:
 	write_save()
 
 
+## Chambers solved at least once: they open the temple's next door.
+func solved_levels() -> Dictionary:
+	return data.get("levels", {}) as Dictionary
+
+
+func is_solved(level: String) -> bool:
+	return solved_levels().has(level)
+
+
+func mark_solved(level: String) -> void:
+	if not data.has("levels"):
+		data["levels"] = {}
+	(data["levels"] as Dictionary)[level] = {"solved": true}
+	write_save()
+
+
 func forgets() -> int:
 	return int(data["forgets"])
 
