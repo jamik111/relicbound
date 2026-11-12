@@ -40,7 +40,7 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
 ## Echoes: the signature mechanic (prototype, chosen after playtest 1)
 **Rewinding doesn't erase what you did. Your past self keeps doing it.** Using the hourglass jumps time back up to
 3 seconds before your last move, and your earlier self replays those exact inputs as a ghost while you act freely. You cooperate with
-yourself: this is what makes Relicbound more than another boulder puzzler.
+yourself: this is what makes Twicefall more than another boulder puzzler.
 - **An echo can:** walk, push boulders and crates, dig dirt, weigh down pressure plates.
 - **An echo can't:** take gems or keys (it passes through them), open keyed doors or the exit, light idols, or hold
   objects up. The player walks through it.

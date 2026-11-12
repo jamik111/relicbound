@@ -1,4 +1,6 @@
-# Handoff prompt: paste this into Claude Code in VS Code
+# Handoff prompt (outdated, 2026-11-02)
+> **Superseded:** the game is now *Twicefall*, a Steam-only puzzler. Start from `CLAUDE.md`, `docs/02_BRD.md` and
+> `docs/08_ROADMAP.md`, not from this file.
 
 ---
 I'm continuing a game project that I started in another Claude Code session. Please read these first, in this order:

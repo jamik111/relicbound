@@ -1,5 +1,5 @@
 # 03 — Product Requirements Document (PRD)
-**Product:** Relicbound: The Meridian Expedition · **Version:** 0.1 · **Owner:** Product · **Status:** Draft
+**Product:** Twicefall (Steam) · **Version:** 0.2 (platform and audience updated 2026-11-12) · **Owner:** Product · **Status:** Draft
 
 ## 1. Problem statement
 Players who loved quick-session puzzle-adventure games on feature phones have no modern, fair, beautiful
@@ -9,18 +9,18 @@ GO games) or built around energy systems and paid boosts.
 ## 2. Goals
 - G1: A 5-minute level should feel like a scene from an adventure film: explore, a puzzle, a trap, an escape.
 - G2: Every death is readable and fair, because the simulation always behaves the same way.
-- G3: A polished native Android app (then iOS): cold start to first level in ≤ 8 s on a mid-range phone, full offline play.
+- G3: A polished Steam game (Windows, Steam Deck): first level within 5 s of launch, full offline play, keyboard and gamepad first.
 - G4: Discovery is rewarded: secrets, lore and a journal that fills in as you play.
 
 ## 3. Non-goals (v1.0)
-Multiplayer · user-made levels (v1.5) · open world · free-form physics puzzles · gacha or energy systems.
+Mobile (any platform) · web demo · multiplayer · user-made levels (post-launch) · open world · free-form physics puzzles · gacha or energy systems.
 
 ## 4. Personas
 | Persona | Need | Design response |
 |---|---|---|
-| **Commuter Kamila** (31, Android, 10-min sessions) | Pick up, play, put down | Checkpoints, autosave every room, levels ≤ 8 min |
-| **Completionist Arda** (24, desktop + phone) | 100% everything | Secrets, relics, par times, badges, cloud save |
-| **Casual Leo** (15, iPhone) | Not get stuck | Hourglass rewind, journal hints, assist mode |
+| **Puzzle fan Kamila** (31, PC, loved Baba Is You) | Puzzles that make her think 2–3 steps ahead | Echoes, the temple remembers, no filler levels |
+| **Completionist Arda** (24, Steam Deck) | 100% everything | Achievements, secrets, par times |
+| **Curious Leo** (19, PC, new to the genre) | Not get stuck | Clear rules, hints, Forgets, assist mode |
 
 ## 5. User stories & acceptance criteria (P0 = launch-blocking)
 
@@ -52,7 +52,7 @@ Multiplayer · user-made levels (v1.5) · open world · free-form physics puzzle
 | PM-2 | I can try a demo in my browser | P2 | World 1 web demo (Compatibility renderer) ≤ 40 MB; ends with a "Get it on Google Play" button |
 | PM-3 | My progress syncs | P1 | Local save is the source of truth; optional account sync; conflicts resolve by most progress |
 | PM-4 | I buy the full game once | P0 | Native IAP on the stores; Stripe or a portal SDK on the web; restore purchase works |
-| PM-5 | I control it my way | P0 | Touch: D-pad by default, or swipe or virtual stick (setting); keyboard; gamepad. Every control can be remapped |
+| PM-5 | I control it my way | P0 | Keyboard and gamepad first; touch (joystick, swipe or stick) kept only as an option; keyboard; gamepad. Every control can be remapped |
 | PM-6 | It's accessible | P1 | Colour-blind safe key colours (shape + colour), subtitles, reduce-motion, assist mode (slower sim, more rewinds) |
 | PM-7 | It's in my language | P1 | All strings in an i18n table; 9 launch languages |
 

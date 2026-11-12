@@ -2,8 +2,11 @@
 **Supersedes ADR-001 (web-first three.js).** · Date: 2026-11-02 · Status: Accepted
 
 ## Decision
-**An Android-first native game built in Godot 4 (GDScript).** It ships to Google Play first, then the iOS App
-Store. A small **web demo** of World 1 is exported from the same project for marketing.
+**Update 2026-11-12: the platform is now Steam (Windows, Steam Deck) only; see the BRD.** The engine, the simulation and
+the architecture below are unchanged. The Android and phone-performance parts are kept for history.
+
+~~An Android-first native game built in Godot 4 (GDScript). It ships to Google Play first, then the iOS App
+Store. A small web demo of World 1 is exported from the same project for marketing.~~
 
 The rules run as a pure grid simulation that always resolves the same way. The scenes, renderer, VFX and audio
 only draw it and react to its events.

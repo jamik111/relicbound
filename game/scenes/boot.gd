@@ -13,8 +13,8 @@ const PERF_SPIKE_SCENE: String = "res://scenes/spikes/perf_spike.tscn"
 func _ready() -> void:
 	var version: String = ProjectSettings.get_setting("application/config/version") as String
 	var renderer: String = RenderingServer.get_current_rendering_method()
-	_label.text = "Relicbound %s  ·  %s renderer" % [version, renderer]
-	print("Relicbound boot OK (v%s, %s, physics=%s)" % [
+	_label.text = "Twicefall %s  ·  %s renderer" % [version, renderer]
+	print("Twicefall boot OK (v%s, %s, physics=%s)" % [
 		version, renderer, ProjectSettings.get_setting("physics/3d/physics_engine")])
 
 	for dir: String in LEVEL_DIRS:

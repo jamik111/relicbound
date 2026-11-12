@@ -1,82 +1,70 @@
 # 02 — Business Requirements Document (BRD)
-**Product:** Relicbound: The Meridian Expedition (working title)
-**Version:** 0.1 · **Date:** 2026-11-02 · **Status:** Draft for review
+**Product:** Twicefall (codename and repo: Relicbound)
+**Version:** 0.2 · **Date:** 2026-11-12 · **Status:** Accepted (replaces the Android-first v0.1)
 
 ## 1. Executive summary
-Relicbound is a premium-quality pulp-adventure action-puzzler. It is an **Android-first native app** (Godot 4), followed by iOS. A free
-World 1 web demo is exported from the same project for marketing. It modernises the beloved feature-phone genre
-(grid puzzles with boulders, treasure and traps) with 2.5D visuals, a real story and fair, modern design that
-respects the player's time.
+Twicefall is a **premium indie logic puzzler for Steam** (Windows, Steam Deck). It's a grid puzzler in the boulder and
+treasure tradition, built on two original ideas. **Echoes:** rewinding leaves your past self replaying what you did.
+**The temple remembers:** where you die leaves a statue, so choosing where to fall is part of the solution. It's
+made by one person and Claude, with no budget.
 
-## 2. Business problem / opportunity
-- Many millennial players remember this genre fondly. It ran on J2ME phones, which are gone, and no modern
-  game fully fills that space.
-- Mobile puzzle stores are crowded with free-to-play match-3 games. There is room for a **fair, premium-feeling
-  adventure** with no energy systems.
-- Web games are easy to try: share a link and play in 5 seconds. Short sessions suit commutes.
-- Building from rules that always resolve the same way keeps level production cheap and makes daily challenges
-  and replays almost free to add.
+## 2. Why Steam, not mobile (decided 2026-11-11)
+- Deep logic puzzlers sell on PC. Baba Is You and Patrick's Parabox found their audience there. Premium mobile puzzle
+  games struggle to be seen, and Monument Valley 3 went to Netflix Games, which then dropped the trilogy in 2025.
+- Fast-scaling mobile genres (hybrid-casual sort and screw puzzles) grow through paid user acquisition and live ops,
+  which we can't fund, and they contradict the game's "logic over looks" identity.
+- Keyboard and gamepad remove our biggest risk on mobile, touch controls (six rounds of playtest fixes).
 
 ## 3. Business objectives
-| # | Objective | Measure | Target (12 months post-launch) |
+| # | Objective | Measure | Target |
 |---|---|---|---|
-| BO1 | Validate demand | Installs (Play + web demo plays) | 250k |
-| BO2 | Convert players to revenue | Demo → full unlock | ≥ 4% |
-| BO3 | Retention | D1 / D7 / D30 | 40% / 15% / 6% |
-| BO4 | Quality perception | Store rating | ≥ 4.5★ |
-| BO5 | Low cost to run | Hosting cost per 1k MAU | < $2 (static hosting + CDN) |
+| BO1 | People want it | Wishlists at launch | ≥ 8,000 (a "solid" launch); stretch 25,000 |
+| BO2 | It sells | First-week sales | ~0.10–0.20 × wishlists (typical median range) |
+| BO3 | Players love it | Steam review score | ≥ 90% positive |
+| BO4 | Players finish it | Chapter 1 completion (Steam achievement) | ≥ 50% of buyers |
+| BO5 | It pays its way | Revenue vs running costs (Claude subscription) | Covers costs within 12 months of launch |
 
-## 4. Target market & audience
-- **Primary:** ages 25–40, nostalgic for mobile games from 2005–2010, play 10–20 min sessions on their phone.
-- **Secondary:** puzzle and adventure fans aged 13+ (Lara Croft GO, Monument Valley, Zelda fans).
-- **Regions:** global, launched in English. Localisation support from day one (EN, ES, PT-BR, RU, TR, UZ, DE, FR, JA).
-- **Devices:** Android phones from 2019 or newer (most important), iPhone 11+, desktop browsers.
+These targets are rules of thumb from published Steam data, not promises: half of all games miss every one of them.
 
-## 5. Business model (recommended)
-**Free demo + one-time unlock (premium):**
-- World 1 (about 12 levels) is free on the web and in the stores.
-- Full game unlock: **$4.99** (one time, works across platforms with an account).
-- Optional cosmetic packs: explorer outfits, lantern skins. Cosmetics only.
-- Optional ads only on the web demo (one rewarded ad = one extra Hourglass charge). **Never** forced ads.
-- Expansion worlds later as paid DLC.
+## 4. Audience
+- **Primary:** PC puzzle players who love Baba Is You, Patrick's Parabox, Braid and The Witness, and play in longer
+  sessions to think.
+- **Secondary:** Steam Deck players, and fans of the boulder and treasure genre (Boulder Dash, Diamond Rush).
+- **Language:** English at launch; localisation-ready strings.
 
-*Rejected:* energy systems or paid hints, because they break the "fair puzzle" promise and the rating target BO4.
+## 5. Business model
+- **Premium, one-time purchase:** about **$9.99** (under $10 tends to convert better; final price is set on the store page).
+- **Free demo:** chapter 1 slice, ideally in a Steam Next Fest (February, June, October).
+- No ads, no microtransactions, no energy systems, no paid hints. Expansions only after a successful launch.
 
-## 6. Scope
-**In scope (v1.0):** 5 worlds × 12 levels + 5 boss rooms, the story campaign, journal, Relic Kit, cloud save,
-touch/keyboard/gamepad controls, Android (launch) + iOS (after launch) + a World 1 web demo, the daily challenge room, analytics.
-**Out of scope (v1.0):** multiplayer, user level editor (planned for v1.5), console versions, procedurally
-generated campaign levels.
+## 6. Scope (v1.0)
+**In:** 3 chapters, about 45 strong puzzles (4–6 hours); echoes and the temple remembers, plus one more verb in
+chapter 3; keyboard and gamepad (touch removed from scope); achievements; settings; light story framing.
+**Out:** mobile (all platforms), web demo, cloud accounts, multiplayer, level editor (possible post-launch),
+enemies without a puzzle purpose.
+**Post-launch ideas:** a daily temple with a shareable result; seeing other players' statues in the same level.
 
-## 7. Stakeholders
-| Role | Responsibility |
+## 7. Team and budget
+| Role | Who |
 |---|---|
-| Product owner (you) | Vision, priorities, final approval |
-| Game designer | Levels, systems, balance |
-| Engineer(s) | Engine, tools, platforms |
-| Artist(s) | 3D tiles, characters, VFX, UI |
-| Audio | Music and sound effects |
-| QA / playtesters | Bugs, difficulty curve |
+| Product owner, playtester, final approval | The user (5–6 h/day, in the loop) |
+| Design, code, levels, art made in code, docs | Claude |
+| External playtesters | Friends and people found by the user (unpaid) |
 
-## 8. Constraints
-- Base Play download **≤ 150 MB** (world packs via Play Asset Delivery if needed); the web demo download ≤ 40 MB.
-- Must run at 60 fps on mid-range Android; a fallback holds 30 fps.
-- Small team, so we use open-source libraries (see tech doc) and avoid paying per-seat engine fees.
-- All characters, settings and names are original. No IP from Diamond Rush or Indiana Jones.
+**Budget: none.** Our only budget is Claude tokens, so the work is planned to use them sparingly (batched changes, narrow reads).
+Art must come from code, the project's art tools and free licences (CC0, CC-BY, OFL, MIT; see CREDITS.md).
 
-## 9. Assumptions
-- Players will pay a fair one-time price once they've had a good free hour.
-- Web distribution (itch.io, CrazyGames/Poki portals, our own domain) supplies cheap players. Stores add revenue.
+## 8. Steam release requirements
+- Steamworks account and a $100 app fee, paid by the user. **Decision: only at the very end**, once the game works and
+  the user is happy with it. Trade-off accepted: a late store page collects fewer wishlists than an early one.
+- At the time of writing, Valve requires a store page to show "Coming soon" before release, and a wait after the first
+  app fee. Check the current rules when we get there.
 
-## 10. Risks
-| Risk | Impact | Mitigation |
-|---|---|---|
-| Seen as a "clone" | Brand/legal | Original worlds, mechanics, story and art (see Genre doc §What we change) |
-| Web performance on low-end phones | Churn | Quality tiers, meshoptimizer compression, pixel VFX instead of heavy particles |
-| Play review / closed-testing rules | Launch delay | Register the Play Console early; run the required closed test (12 testers × 14 days) during beta |
-| Level production too slow | Timeline | Text-based level format, in-game editor, automated solver checks |
-| Difficulty spikes | Retention | Analytics funnels per level, Hourglass rewind, optional hints from the journal |
-
-## 11. Success criteria / go–no-go
-- **Vertical slice gate:** 3 levels + 1 boss. Playtest score ≥ 8/10 for fun, and ≥ 70% finish the slice.
-- **Soft launch gate:** D1 ≥ 35%, unlock conversion ≥ 3% in test regions.
+## 9. Risks
+| Risk | Response |
+|---|---|
+| Strangers don't find the logic satisfying | Phase 1 tests exactly this before any art or Steam work |
+| Late store page means few wishlists | Make the trailer, capsule and demo ready in advance so the page launches complete |
+| No art budget | Pick a style we can make well in code; test screenshots early |
+| Token limits slow us down | Batch work, plan before building, and test on the user's PC |
+| Name clash | "Relicbound" was taken on Steam (BT Studios, July 2025). "Twicefall" had no match when checked on 2026-11-11 |
