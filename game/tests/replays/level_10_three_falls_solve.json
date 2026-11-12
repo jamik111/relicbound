@@ -1,0 +1,11 @@
+{
+	"level": "res://levels/greybox/level_10_three_falls.json",
+	"note": "Shield first, so it's the scar that fades. Gem, then the idol, then die on the three plates.",
+	"inputs": "LUUL ............... X LUU RRRRRRRRRRRRRRRRR LLLLLLLLLLLLLLLLL DDL .. DLD ............... X DRRD ............... X DRRRRRD ............... X DRRRRRRR",
+	"expect": {
+		"won": true,
+		"alive": true,
+		"gems_collected": 1
+	},
+	"hash": "cfd4a78b1c745e7e5c4aab1d76e9d1b5e56fdf517efbe0e89dc7f813aab98310"
+}
