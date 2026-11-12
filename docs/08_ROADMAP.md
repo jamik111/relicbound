@@ -1,128 +1,46 @@
-# 08 — Build Roadmap: how we start building
-**Platform:** Android first (Godot 4) → iOS → web demo · **Team assumption:** 1–3 people · Sprints are 2 weeks.
+# 08 — Roadmap (Steam)
+**Platform:** Steam (Windows, Steam Deck) · **Team:** the user (product owner, 5–6 h/day) + Claude (most of the work)
+· **Budget:** none, so tokens are the constraint · Replaces the Android-first roadmap (in git history before 2026-11-12).
 
-Durations are estimates for a small team working on this full time. Halve the speed if it's part time.
+## Where we are
+Done so far, Android-first (Sprints 0–2, PRs #1–#26): a pure simulation that always resolves the same way, with
+252 GUT tests and golden replays. Grey-box levels 1–9. Echoes. The temple remembers (scars, remnants, Forgets, idol saves). Responsive
+controls. The playtests were all done by the user. Everything carries over except the Android and touch work.
 
-## Overview
-```
-Month:   1        2        3        4    5    6    7    8    9    10   11   12   13
-       [S0][S1 ][S2 ][S3 ][S4 ][S5 ][S6 ]
-        Setup  Grey-box   Vertical slice  |---- Production (Worlds 2–5) ----|Beta|Launch
-        ▲ Gate A        ▲ Gate B        ▲ Gate C                         ▲ D   ▲ E
-```
-| Gate | When | Question it answers | Pass criteria |
+## Phases
+Estimates assume about 5–6 hours a day of the user's time and careful token use. They're guesses to be revised at each gate.
+
+| Phase | Goal | Gate: pass criteria | Estimate |
 |---|---|---|---|
-| **A: Tech** | end of Sprint 0 | Can our stack hit mobile targets? | Test scene at 60 fps on a mid-range Android; APK installs; CI is green |
-| **B: Fun** | end of Sprint 2 | Is it fun with plain cubes? | 5 testers play the grey-box levels; average fun ≥ 7/10; they want "one more level" |
-| **C: Slice** | end of Sprint 6 | Does it look and feel like the real game? | 3 polished levels + boss; external fun ≥ 8/10; ≥ 70% finish |
-| **D: Content complete** | ~month 11 | Is the whole game in? | All 60 levels + 5 bosses playable; solver CI is green |
-| **E: Launch** | ~month 13 | Is the market ready? | Soft-launch D1 ≥ 35%, conversion ≥ 3%, crash-free ≥ 99.5% |
+| **1. Validate** | Strangers love the core on PC | **Gate B:** 5–10 new players on a PC build; most reach level 8; average fun ≥ 7/10; they ask for more unprompted | 3–4 weeks |
+| **2. Look and feel** | It looks and sounds like a real game | **Gate C:** screenshots a stranger would click on; menus, settings, audio; chapter 1 polished | 6–8 weeks |
+| **3. Content** | The whole game is in | **Gate D:** 3 chapters, about 45 puzzles, each solver-checked; full playthrough by 3 testers | 8–10 weeks |
+| **4. Polish and beta** | Ready to sell | **Gate E:** no known blocking bugs; Steam Deck plays well; achievements; trailer, capsule art and demo build ready | ~4 weeks |
+| **5. Steam release** | On sale | Steamworks set up by the user, store page live, Next Fest demo if the dates fit, then launch | Valve's waiting rules apply |
 
----
+If Gate B fails, we change the design and test again before any art. **No art before Gate B.**
 
-## Before Sprint 0: things to get ready (1–3 days)
-| Item | Notes |
-|---|---|
-| Godot 4.x (latest stable, ≥ 4.4) | Also download the **export templates** for the same version |
-| Android Studio or the command-line tools | Android SDK, platform-tools (adb), build-tools, OpenJDK 17 |
-| A real Android phone | Mid-range (e.g. Snapdragon 7-series or similar). Turn on USB debugging. The real phone is the truth, not the emulator |
-| Blender 4.x | Tiles and characters |
-| Node 18+ | For pixelfx sprite-sheet baking (already installed and checked) |
-| GitHub repo | Push this project; enable Actions |
-| Google Play Console account | One-time $25. Register early because identity verification can take days |
-
----
-
-## Sprint 0: Setup & tech spike (weeks 1–2) → Gate A
-**Goal:** prove the stack on a real phone before writing game code.
-
+## Phase 1: Validate (now)
 | # | Task | Done when |
 |---|---|---|
-| 0.1 | Create the Godot project in `game/`, folder layout from `06_TECH_STACK.md`, autoloads (`Game`, `Events`, `Settings`, `Save`) | Project opens and runs an empty scene |
-| 0.2 | Set Jolt as the 3D physics engine; set the Mobile renderer; add the Compatibility fallback setting | Settings committed |
-| 0.3 | Install the GUT addon; write 1 dummy test; headless test command works | `gut` passes in the terminal |
-| 0.4 | Android export preset (debug APK + release AAB), keystore in a secret (not in git) | APK installs and opens on the phone |
-| 0.5 | GitHub Actions: headless tests + Android debug export + Web export | CI green on push; APK downloadable as an artifact |
-| 0.6 | **Performance spike scene:** a 32×24 tile room (MultiMesh), 8 torch lights, ortho tilted camera, 20 Jolt debris bodies, 10 pixelfx sprites | Holds 60 fps on the mid-range phone, 30+ on Compatibility |
-| 0.7 | **Plugin spike:** install Effekseer for Godot 4 and Terrain3D; build a tiny scene with each and export to Android | Each one is marked "works on Android" or "drop" in the tech doc |
-| 0.8 | godot_voxel spike (time-boxed to 1 day) | Keep or drop (rule: drop if > 3 MB or > 2 ms/frame) |
-| 0.9 | pixelfx bake script: `tools/bake_fx.ps1` / `tools/bake_fx.sh` export every effect in `tools/fx_list.txt` into `game/assets/fx/<id>/` (see `09_ART_PIPELINE.md` §2) | Dust + sparkle play in the spike scene |
+| P1.1 | **PC build:** Windows (and Linux) export preset; CI exports PC instead of Android; keyboard and gamepad first | The user plays the .exe from a CI artifact |
+| P1.2 | Remove mobile-only code paths from the critical path (touch controls stay as an option) | No Android steps in CI |
+| P1.3 | **Solver:** finds every solution route of a level, including the hourglass and remnants | Levels 1–9 checked; unplanned routes fixed or kept on purpose |
+| P1.4 | Levels 10–15: harder echo + memory puzzles, each with a recorded solution | Solver-checked; the user has played them |
+| P1.5 | Onboarding pass: first-time hints, clear death and statue feedback, no dead ends without a message | A stranger gets through level 3 without help |
+| P1.6 | **Playtest kit:** a zip build, a 5-question feedback form, and optional local play logs | Ready to send to friends |
+| P1.7 | **Gate B playtest** with 5–10 new players | Decision: go, change, or stop |
 
----
-
-## Sprints 1–2: Grey-box prototype (weeks 3–6) → Gate B
-**Goal:** the core game with cubes. No art, no story, just rules and feel.
-
-### Sprint 1: the simulation (weeks 3–4)
-| # | Task | Done when |
-|---|---|---|
-| 1.1 | `SimState`: grid of tile ids (PackedInt32Array), object list, player, tick, seeded RNG, `hash()` | Tests cover create/copy/hash |
-| 1.2 | `SimStep.step()` with tick order from the GDD: player move → falling/rolling → triggers → damage | — |
-| 1.3 | Rules: walk, dig dirt, push boulder/crate, gravity, roll off round objects, crush only when moving | ≥ 25 GUT tests for edge cases, all green |
-| 1.4 | Gems, exit quota, keys/doors (4 colours plus shapes) | Tests green |
-| 1.5 | Level format: JSON with `size`, `layers[terrain, objects]` as text rows, `meta` | 5 test rooms load |
-| 1.6 | Golden replay system: record inputs → save → replay → compare hash | 1 replay in CI |
-
-### Sprint 2: playable on a phone (weeks 5–6)
-| # | Task | Done when |
-|---|---|---|
-| 2.1 | `LevelView`: sync cubes to the sim with smooth interpolation between ticks; camera follow | Movement looks smooth at 10 Hz sim / 60 fps render |
-| 2.2 | Touch input: swipe-and-hold + virtual stick option, with a 120 ms input buffer; keyboard for desktop testing | Controls feel tight on the phone |
-| 2.3 | Death → respawn at checkpoint in ≤ 1.2 s; checkpoint idols | — |
-| 2.4 | **Hourglass rewind** (ring buffer of 30 states, 3 charges) | Rewind works mid-fall |
-| 2.5 | Hazards: spikes, cracked floor, pits, dart wall; 2 enemies (pit viper, bat) | Tests + 1 room each |
-| 2.45 | **Echoes prototype** (signature mechanic, added after playtest 1): hourglass leaves a replaying ghost; pressure plates and gates | One room playable; the player says whether it's exciting |
-| 2.6 | 5 grey-box levels following the GDD beat template, **built around Echoes** | Playable start to finish |
-| 2.65 | **Harder Echo puzzles** that make you plan 2–3 steps ahead (playtest 1: "logic over looks") | The player has to stop and think |
-| 2.66 | **The temple remembers** (playtest 2): dying leaves a scar and a remnant, so an attempt can't be repeated. Prototype + level 7 | The player chooses where to die |
-| 2.7 | Basic feedback: effects, placeholder sounds and vibration **only where they make rules easier to understand** | — |
-| 2.75 | **Enemies stay out of the main levels** (playtest 1): they exist in Test 08 only, until one has a real puzzle purpose. See the GDD | Not a Gate B requirement |
-| 2.8 | **Playtest** with 5 people; fill in a feedback form. Ask directly whether Echoes feel new and fun, not just whether the game is fun | Gate B decision |
-
-> If Gate B fails, we iterate on the rules for 1–2 more weeks. **No art is made until the cubes are fun.**
-
----
-
-## Sprints 3–6: Vertical slice (weeks 7–14) → Gate C
-**Goal:** a 15-minute piece of the final game, World 1 quality.
-
-| Sprint | Focus | Key tasks |
-|---|---|---|
-| **3** | Art pipeline | World 1 tile kit in Blender (≈ 25 tiles), Material Maker jade/limestone/moss materials, MeshLibrary/MultiMesh swap from cubes, lighting setup, quality tiers |
-| **4** | Nadia & tools | Nadia model + rig + 9 animation clips in an AnimationTree; **grapple-whip** rule + tests; **water** element (flow, floating crates, drowning) + tests |
-| **5** | Levels & boss | 3 final World 1 levels (teach, twist, chase); **Stone Jaguar** boss (3 phases, telegraphs); Effekseer boss VFX; Jolt debris on boulder smashes |
-| **6** | Wrapping | Main menu, level select, HUD, pause, journal v1 (map pages + 1 Thorne note), save/load, music theme + world stems, SFX pass, analytics events, **external playtest** |
-
----
-
-## Production: Worlds 2–5 (months 4–11) → Gate D
-Each world takes about **6–7 weeks** using the same recipe:
-1. **Week 1:** element rules + GUT tests (sand / ice / lava / gears) + new tool.
-2. **Week 2:** tile kit + materials + new enemies.
-3. **Weeks 3–5:** 12 levels (≈ 4 per week) in the level editor; solver CI on each.
-4. **Week 6:** boss + cutscenes + journal pages + music.
-5. **Week 7:** playtest + tune the difficulty from the analytics funnels.
-
-Runs alongside throughout: **in-game level editor** (month 4, speeds everything up), **solver** (month 4),
-localisation string table (month 6), accessibility options (month 8), the iOS export preset (month 9).
-
-## Beta & launch (months 12–13) → Gate E
-- Google Play Billing (full-game unlock), restore purchase, Play Games cloud save.
-- **Closed testing on Play** (required: ≥ 12 testers for 14 days for new personal developer accounts), then soft launch in 2–3 countries.
-- Web demo (World 1, Compatibility renderer) on itch.io/our site with a "Get it on Google Play" button.
-- Store page, trailer, screenshots, press kit. Then iOS submission.
-
----
+## Later phases (planned, not yet broken down)
+- **Phase 2:** art direction decided by screenshot tests; real lighting (PC can afford it); a tile kit made in code or Blender;
+  menus, level select, settings (rebinding, audio, accessibility); placeholder audio, then free-licence audio.
+- **Phase 3:** chapter 2 (the temple remembers) and chapter 3 (a new verb, possibly the grapple-whip); story framing;
+  a level editor for our own use if it speeds up making levels.
+- **Phase 4:** achievements, Steam Deck checks, performance on low-end PCs, trailer, capsule art and GIFs.
+- **Phase 5:** the user decides when to start; then the Steamworks steps.
 
 ## How we work
-- **Branching:** `main` is always shippable; one branch per feature; open a PR → CI must pass before merging.
-  Nobody pushes straight to `main`. GitHub branch protection needs a paid plan on private repos, so a local
-  hook enforces it: run `git config core.hooksPath .githooks` once per clone.
-- **Definition of done:** tests pass, works on the reference phone, no new warnings, docs updated if the rules changed.
-- **Weekly:** build on the phone every Friday + a 15-minute playtest + a short note in `docs/devlog/`.
-- **Claude Code:** use the `relicbound-stack` skill for code and the `pixelfx` skill for effects. Ask for one roadmap task ID at a time (e.g. "do task 1.3").
-
-## Next 3 actions
-1. Install Godot + the Android SDK, plug in a phone (checklist above).
-2. Push this repo to GitHub.
-3. Start **Sprint 0, task 0.1**.
+- **Branching:** `main` is protected; one branch per feature, a PR, green CI, then Claude merges (standing permission).
+- **Tokens:** batch related changes into one PR, read files narrowly, settle decisions before writing, keep replies short.
+- **Testing:** the user plays on PC; feel and fun are judged by people, not by green tests.
+- **Definition of done:** tests pass, it works on the user's PC, docs are updated if the rules changed.

@@ -33,7 +33,7 @@ Awakening* (dungeon flow), *Spelunky* (dangers built from the systems).
 5. Exotic ancient places and a pulp adventure tone.
 
 ## What we change (so it is ours, and better)
-| Area | Old way | Relicbound |
+| Area | Old way | Twicefall |
 |---|---|---|
 | Visuals | 128×160 sprites | 2.5D dioramas: low-poly 3D tiles, dynamic torch light, pixel-art VFX layer, tilt-shift camera |
 | Settings | Temple / castle / mountain | 5 original sites (jungle cenote, desert necropolis, glacier barrow, volcanic forge, sunken clockwork city), each with **its own simulation element** (water, sand, ice, lava, gears) |

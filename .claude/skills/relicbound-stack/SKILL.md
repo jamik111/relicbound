@@ -1,9 +1,10 @@
 ---
 name: relicbound-stack
-description: How to build Relicbound (a pulp-adventure grid action-puzzler, Android-first, Godot 4 + GDScript, web demo export) and how to use the ten third_party libraries in it (JoltPhysics, recastnavigation, meshoptimizer, pixelfx, Effekseer, Material Maker, FastNoise2, Terrain3D, godot_voxel, ozz-animation). Use when writing game code, the sim, levels, scenes, the asset pipeline, VFX, Android export or CI for this project, or when deciding whether one of those libraries fits a task.
+description: How to build Twicefall (codename Relicbound; a grid logic puzzler for Steam, Godot 4 + GDScript, web demo export) and how to use the ten third_party libraries in it (JoltPhysics, recastnavigation, meshoptimizer, pixelfx, Effekseer, Material Maker, FastNoise2, Terrain3D, godot_voxel, ozz-animation). Use when writing game code, the sim, levels, scenes, the asset pipeline, VFX, Android export or CI for this project, or when deciding whether one of those libraries fits a task.
 ---
 
-# Relicbound stack (Godot 4, Android-first)
+# Relicbound stack (Twicefall, Godot 4, Steam)
+> Since 2026-11-11 the target is Steam only (Windows, Steam Deck). Android and touch guidance below is historical.
 
 Read `docs/06_TECH_STACK.md` (architecture), `docs/05_GDD_MECHANICS.md` (rules) and `docs/08_ROADMAP.md`
 (the current sprint) before you change code. The Godot project root is `game/`.

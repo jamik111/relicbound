@@ -1,6 +1,6 @@
 # Credits
 
-Third-party work shipped in or used to build Relicbound. Only CC0, CC-BY, OFL and MIT are allowed
+Third-party work shipped in or used to build Twicefall. Only CC0, CC-BY, OFL and MIT are allowed
 (`docs/09_ART_PIPELINE.md`). Add a line here whenever a third-party asset goes into the repo.
 
 ## Engine and code

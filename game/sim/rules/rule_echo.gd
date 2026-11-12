@@ -1,6 +1,6 @@
 class_name RuleEcho
 extends RefCounted
-## Echoes, Relicbound's signature mechanic. Using the hourglass rewinds time, and the player's past self
+## Echoes, Twicefall's signature mechanic. Using the hourglass rewinds time, and the player's past self
 ## replays the recorded inputs as a ghost while the player acts freely.
 ##
 ## An echo walks, pushes boulders and crates, digs dirt and weighs down pressure plates. It's a ghost: it
