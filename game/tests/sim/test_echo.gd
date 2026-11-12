@@ -186,6 +186,7 @@ func test_game_rewind_spawns_echo_of_recorded_moves() -> void:
 	file.store_string(JSON.stringify(LevelCodec.from_combined(["######", "#@...#", "######"], {"gems_required": 0})))
 	file.close()
 	Game.move_interval_ticks = 1
+	Game.hold_delay_ticks = 0
 	assert_true(Game.load_level(path))
 	Game.stop()
 	Game.press(SimStep.Intent.RIGHT)
@@ -197,4 +198,5 @@ func test_game_rewind_spawns_echo_of_recorded_moves() -> void:
 	assert_eq(Game.state.echoes.size(), 1)
 	assert_eq(Replay.encode_inputs(Game.state.echoes[0].inputs), "RR")
 	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
+	Game.hold_delay_ticks = Game.HOLD_DELAY_TICKS
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))

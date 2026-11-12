@@ -49,6 +49,12 @@ const SPIKE_SCALES: Array[float] = [0.25, 0.55, 1.0]
 const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
 const PLAYER_DEAD_TINT: Color = Color(1.0, 0.25, 0.2)
 const GEM_SPIN_SPEED: float = 2.5
+## The step is a hop (Crossy Road-like feel): a small arc, a stretch in the air and a squash on landing. View only.
+const HOP_HEIGHT: float = 0.18
+const HOP_STRETCH: float = 0.14
+const HOP_SQUASH: float = 0.2
+## How long the landing squash lasts, in ticks after touching down.
+const LAND_TICKS: float = 0.8
 const GEM_BOB_HEIGHT: float = 0.06
 const PLATE_ACTIVE_COLOR: Color = Color(1.0, 0.95, 0.4)
 const ECHO_COLOR: Color = Color(0.5, 1.0, 1.0, 0.8)
@@ -274,7 +280,7 @@ func show_state(prev: SimState, cur: SimState, events: Array) -> void:
 	_prev_cells = _cur_cells
 	_cur_cells = _object_cells(cur)
 	if prev.player != cur.player:
-		_player_from = _player.position
+		_player_from = Vector3(_player.position.x, 0.0, _player.position.z)
 		_player_move_tick = cur.tick
 	var terrain_changed: bool = false
 	for e: Variant in events:
@@ -316,11 +322,10 @@ func interpolate(alpha: float) -> void:
 			var t: float = Time.get_ticks_msec() / 1000.0
 			node.rotation.y = t * GEM_SPIN_SPEED
 			node.position.y += sin(t * 3.0 + id) * GEM_BOB_HEIGHT
-	var progress: float = clampf((_cur.tick - _player_move_tick + alpha) / player_move_ticks, 0.0, 1.0)
-	# Ease out: most of the step shows at once, so the character reacts the moment you press (playtest 6).
-	_player.position = _player_from.lerp(cell_to_world(_cur.player), 1.0 - (1.0 - progress) * (1.0 - progress))
+	_hop(_player, _player_from, cell_to_world(_cur.player), (_cur.tick - _player_move_tick + alpha) / player_move_ticks)
 	_player.rotation.y = atan2(float(_cur.facing.x), float(_cur.facing.y))
-	_player.scale = Vector3(1.2, 0.25, 1.2) if not _cur.alive else Vector3.ONE
+	if not _cur.alive:
+		_player.scale = Vector3(1.2, 0.25, 1.2)
 	for e: SimEnemy in _cur.enemies:
 		var enemy_view: Dictionary = _enemy_views[e.id]
 		var ticks: float = float(RuleEnemies.BAT_MOVE_TICKS if e.kind == SimEnemy.Kind.BAT else RuleEnemies.VIPER_MOVE_TICKS)
@@ -331,9 +336,22 @@ func interpolate(alpha: float) -> void:
 	for e: SimEcho in _cur.echoes:
 		var view: Dictionary = _echo_views[e.id]
 		var node: Node3D = view["node"]
-		var step: float = clampf((_cur.tick - int(view["tick"]) + alpha) / player_move_ticks, 0.0, 1.0)
-		node.position = (view["from"] as Vector3).lerp(cell_to_world(e.cell), step)
+		_hop(node, view["from"] as Vector3, cell_to_world(e.cell), (_cur.tick - int(view["tick"]) + alpha) / player_move_ticks)
 		node.rotation.y = atan2(float(e.facing.x), float(e.facing.y))
+
+
+## Places a walker `p` of the way through a step (0..1, more while landing). Ease out across, so most of the step shows
+## at once and the character reacts the moment you press (playtest 6).
+static func _hop(node: Node3D, from: Vector3, to: Vector3, p: float) -> void:
+	var t: float = clampf(p, 0.0, 1.0)
+	node.position = from.lerp(to, 1.0 - (1.0 - t) * (1.0 - t))
+	if from.is_equal_approx(to):
+		node.scale = Vector3.ONE
+		return
+	node.position.y += HOP_HEIGHT * 4.0 * t * (1.0 - t)
+	var land: float = clampf((p - 1.0) / LAND_TICKS, 0.0, 1.0)
+	var k: float = HOP_STRETCH * sin(PI * t) - (HOP_SQUASH * sin(PI * land) if p > 1.0 else 0.0)
+	node.scale = Vector3(1.0 - k * 0.5, 1.0 + k, 1.0 - k * 0.5)
 
 
 static func cell_to_world(c: Vector2i) -> Vector3:
@@ -536,7 +554,8 @@ func _sync_enemies() -> void:
 			_enemy_views[e.id] = {"node": node, "from": node.position, "to": e.cell, "tick": _cur.tick - 100}
 		var view: Dictionary = _enemy_views[e.id]
 		if view["to"] != e.cell:
-			view["from"] = (view["node"] as Node3D).position
+			var at: Vector3 = (view["node"] as Node3D).position
+			view["from"] = Vector3(at.x, 0.0, at.z)
 			view["to"] = e.cell
 			view["tick"] = _cur.tick
 	for id: int in _enemy_views.keys():
