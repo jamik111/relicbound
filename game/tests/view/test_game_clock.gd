@@ -7,12 +7,14 @@ const LEVEL: String = "res://levels/test/test_01_walk_dig.json"
 
 func before_each() -> void:
 	Game.move_interval_ticks = 1  # most tests here look at buffering, one move per tick
+	Game.hold_delay_ticks = 0
 	assert_true(Game.load_level(LEVEL))
 	Game.stop()
 
 
 func after_each() -> void:
 	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
+	Game.hold_delay_ticks = Game.HOLD_DELAY_TICKS
 	Game.release_all()
 	Game.stop()
 
@@ -52,6 +54,43 @@ func test_most_recent_held_direction_wins() -> void:
 
 
 ## The cadence is one tile per tick now (playtest 7: "still lagging"), but the cooldown still works if it's raised.
+# --- Delayed auto-repeat: a tap is one step, holding waits a moment, then walks ---
+
+func test_holding_waits_once_then_repeats_every_tick() -> void:
+	Game.hold_delay_ticks = Game.HOLD_DELAY_TICKS
+	Game.press(SimStep.Intent.RIGHT)
+	Game._advance()
+	assert_eq(Game.state.player, Vector2i(2, 1), "the first step is immediate")
+	for i: int in Game.HOLD_DELAY_TICKS:
+		Game._advance()
+	assert_eq(Game.state.player, Vector2i(2, 1), "a short hold doesn't overshoot")
+	Game._advance()
+	assert_eq(Game.state.player, Vector2i(3, 1), "then it repeats")
+	Game._advance()
+	assert_eq(Game.state.player, Vector2i(4, 1), "every tick")
+
+
+func test_quick_taps_dont_wait_for_the_repeat_delay() -> void:
+	Game.hold_delay_ticks = Game.HOLD_DELAY_TICKS
+	for i: int in 3:
+		Game.press(SimStep.Intent.RIGHT)
+		Game.release(SimStep.Intent.RIGHT)
+		Game._advance()
+	assert_eq(Game.state.player, Vector2i(4, 1), "one tile per tap, at tap speed")
+
+
+func test_releasing_the_newer_key_hands_over_at_once() -> void:
+	Game.hold_delay_ticks = Game.HOLD_DELAY_TICKS
+	Game.press(SimStep.Intent.RIGHT)
+	Game._advance()
+	Game.press(SimStep.Intent.LEFT)
+	Game._advance()
+	assert_eq(Game.state.player, Vector2i(1, 1))
+	Game.release(SimStep.Intent.LEFT)
+	Game._advance()
+	assert_eq(Game.state.player, Vector2i(2, 1), "RIGHT is still held, so it walks without the delay")
+
+
 func test_walking_cadence_limits_held_direction() -> void:
 	Game.move_interval_ticks = 2
 	Game.press(SimStep.Intent.RIGHT)
@@ -80,6 +119,7 @@ func test_tap_during_cooldown_waits_instead_of_vanishing() -> void:
 
 func _start_clock() -> void:
 	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
+	Game.hold_delay_ticks = Game.HOLD_DELAY_TICKS
 	Game.running = true
 
 
@@ -120,7 +160,7 @@ func test_holding_a_direction_still_walks_at_walking_speed() -> void:
 	Game.press(SimStep.Intent.RIGHT)
 	for i: int in 5:
 		Game._process(0.1)
-	assert_between(Game.state.player.x - 1, 5, 6, "one tile per tick, no faster")
+	assert_between(Game.state.player.x - 1, 4, 5, "one tile per tick after the hold delay, no faster")
 
 
 func test_no_early_tick_while_dead() -> void:

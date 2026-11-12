@@ -14,6 +14,9 @@ const RESPAWN_DELAY: float = 1.0
 ## This is an input cadence, not a sim rule, so replays (which record per-tick intents) don't change.
 ## Ticks between steps while a direction is held: 1 is one tile per tick (10 a second). Playtest 7 found 2 sluggish.
 const MOVE_INTERVAL_TICKS: int = 1
+## Delayed auto-repeat, as in Tetris or Baba Is You: a tap is exactly one step, at once. Holding waits this many ticks
+## after the first step before it repeats, so a short press never overshoots into a dart, and long walks stay fast.
+const HOLD_DELAY_TICKS: int = 1
 ## How far the gamepad's left stick must be pushed before it counts as a direction.
 const STICK_DEAD_ZONE: float = 0.5
 
@@ -34,6 +37,9 @@ var running: bool = false
 var alpha: float = 0.0
 var rewinds_left: int = REWIND_CHARGES
 var move_interval_ticks: int = MOVE_INTERVAL_TICKS
+var hold_delay_ticks: int = HOLD_DELAY_TICKS
+## Ticks left before a held direction starts repeating.
+var _repeat_wait: int = 0
 
 var _accumulator: float = 0.0
 ## Directions currently held, most recent first. Holding a direction repeats at the walking cadence.
@@ -205,7 +211,10 @@ func _is_reversal(intent: SimStep.Intent) -> bool:
 
 
 func release(intent: SimStep.Intent) -> void:
+	var was_front: bool = not _held.is_empty() and _held[0] == intent
 	_held.erase(intent)
+	if was_front:
+		_repeat_wait = 0  # a direction still held takes over at once: you're already holding it
 
 
 func release_all() -> void:
@@ -282,7 +291,12 @@ func _take_intent() -> SimStep.Intent:
 		_move_cooldown -= 1
 		return SimStep.Intent.NONE
 	var want: SimStep.Intent = _pending
-	if want == SimStep.Intent.NONE and not _held.is_empty():
+	if want != SimStep.Intent.NONE:
+		_repeat_wait = hold_delay_ticks
+	elif not _held.is_empty():
+		if _repeat_wait > 0:
+			_repeat_wait -= 1
+			return SimStep.Intent.NONE
 		want = _held[0]
 	_pending = SimStep.Intent.NONE
 	if want == SimStep.Intent.NONE:
