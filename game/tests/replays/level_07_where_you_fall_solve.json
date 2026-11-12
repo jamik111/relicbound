@@ -1,11 +1,11 @@
 {
 	"level": "res://levels/greybox/level_07_where_you_fall.json",
 	"note": "Let the dart kill you on the far plate first, then on the near one: a scar on the near plate would block the way to the far one. Both scars hold the gate open for the walk to the exit.",
-	"inputs": "R.U.U.R.R.R.R.R.R. ............ X R.U.U.R.R. ..................... X R.R.R.R.R.R.R.R.R.R.R.R.",
+	"inputs": "RUURRRRRR......XRUURR...........XRRRRRRRRRRRR",
 	"expect": {
 		"won": true,
 		"alive": true,
 		"gems_collected": 1
 	},
-	"hash": "0c6593dd20346464de436459b808b2c81286bb7cda211737afaec7b1f66295ae"
+	"hash": "380e9afc783e11b573d169b6475aba17d62295c9d0afba84ef55daf6dd8fbac2"
 }

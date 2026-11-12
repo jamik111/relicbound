@@ -7,8 +7,9 @@ rotated (5°), so walls have visible faces. (35° above the horizon was tried: 1
 the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors and checkpoints.
 
 ## Simulation tick (the heart of the game)
-- 10 ticks/s by default (assist mode: 6). The player walks at most 1 tile per 2 ticks (5 tiles/s; playtest 1: 10 tiles/s
-  was too fast near hazards). Falling and rolling objects still move 1 tile per tick (10 tiles/s).
+- 10 ticks/s by default (assist mode: 6). The player walks 1 tile per tick (10 tiles/s). Playtest 1 on a phone found that too fast near
+  hazards, so it was 5 tiles/s until playtest 7 on PC found that sluggish on a keyboard. Falling and rolling objects
+  also move 1 tile per tick.
 - Order within one tick: **1) player intent → 2) tools → 3) falling/rolling objects (scanned bottom-to-top,
   left-to-right) → 4) element flows (water/sand/lava) → 5) enemies → 6) triggers → 7) damage resolve.**
 - Each object has a `moving` flag. A falling object kills only if `moving == true` when it enters the
@@ -33,7 +34,7 @@ the room. Levels are 16×12 to 64×48 tiles, split into rooms joined by doors an
   dying gives back the uses you had at your last checkpoint (the echoes they made are gone, and a room needing an echo
   would otherwise become unwinnable).
 - **Hazard timing** (all derived from the tick, 10 ticks/s): spikes cycle every 3 s (2 s down, 0.5 s warning, 0.5 s up),
-  with a second phase half a cycle later; dart walls fire every 3 s after a 0.5 s warning, along their row until a
+  with a second phase half a cycle later; dart walls fire every 1.5 s after a 0.5 s warning (halved with the walking speed, so a corridor still can't be outrun), along their row until a
   solid tile or any object. Cracked floor collapses at the start of the tick after you step off. A boulder, crate
   or gem entering a pit fills it. Walking into a pit kills.
 
@@ -180,7 +181,7 @@ Stars aren't used. Collectibles drive progress: 60% of gems across a world unloc
   press that can act runs the next tick on the next frame instead of waiting for the 10 Hz clock. Stepping straight back
   skips the walking cadence, because it's a dodge. The character shows most of each step at once (ease out). Android
   input is flushed more than once per frame. None of this changes the sim or replays: it only changes when ticks run and
-  which inputs reach them. Sideways turns and held walks keep the 5 tiles/s speed.
+  which inputs reach them. Held walks move 10 tiles/s.
 - **The game never moves you unasked.** A slip here can cost a statue, so controls must not guess. Tried and rejected: an
   automatic walk to the next opening after an early turn, an automatic step back after a late one, and moving the swipe
   anchor with forward drift (slanted drags turned by accident).

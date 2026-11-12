@@ -14,7 +14,8 @@ extends RefCounted
 const SPIKE_CYCLE: int = 30
 const SPIKE_WARN: int = 5
 const SPIKE_UP: int = 5
-const DART_PERIOD: int = 30
+## 15 ticks (1.5 s): halved with the walking speed so corridors can't be outrun between darts.
+const DART_PERIOD: int = 15
 const DART_WARN: int = 5
 
 enum SpikePhase { DOWN, WARNING, UP }

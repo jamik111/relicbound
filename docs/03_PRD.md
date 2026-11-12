@@ -27,7 +27,7 @@ Mobile (any platform) · web demo · multiplayer · user-made levels (post-launc
 ### Core play
 | ID | Story | Priority | Acceptance criteria |
 |---|---|---|---|
-| CP-1 | As a player I move tile-by-tile in 4 directions | P0 | Holding a direction repeats at 5 tiles/s (one step per 2 ticks; tuned in playtest 1); inputs are buffered for 120 ms; one move per sim tick |
+| CP-1 | As a player I move tile-by-tile in 4 directions | P0 | Holding a direction repeats at 10 tiles/s (one step per tick; playtest 7 on PC); inputs are buffered for 120 ms; one move per sim tick |
 | CP-2 | I can push a boulder or crate | P0 | It pushes only if the far tile is empty; there's a 0.15 s "lean" before the first push so taps don't push by accident |
 | CP-3 | Boulders and gems fall and roll | P0 | Gravity follows the GDD rules; stacked rocks roll off round objects; a falling object kills the player only when it was already moving |
 | CP-4 | I collect gems to open the exit | P0 | The HUD shows gems/required; the exit animates when the quota is met |

@@ -51,8 +51,9 @@ func test_most_recent_held_direction_wins() -> void:
 	assert_eq(Game.state.player, Vector2i(2, 1), "releasing LEFT falls back to the still-held RIGHT")
 
 
+## The cadence is one tile per tick now (playtest 7: "still lagging"), but the cooldown still works if it's raised.
 func test_walking_cadence_limits_held_direction() -> void:
-	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
+	Game.move_interval_ticks = 2
 	Game.press(SimStep.Intent.RIGHT)
 	Game._advance()
 	assert_eq(Game.state.player, Vector2i(2, 1), "the first step is immediate")
@@ -63,7 +64,7 @@ func test_walking_cadence_limits_held_direction() -> void:
 
 
 func test_tap_during_cooldown_waits_instead_of_vanishing() -> void:
-	Game.move_interval_ticks = Game.MOVE_INTERVAL_TICKS
+	Game.move_interval_ticks = 2
 	Game.press(SimStep.Intent.RIGHT)
 	Game.release(SimStep.Intent.RIGHT)
 	Game._advance()
@@ -105,6 +106,7 @@ func test_reversing_skips_the_walking_cadence() -> void:
 
 func test_other_turns_still_keep_the_walking_cadence() -> void:
 	_start_clock()
+	Game.move_interval_ticks = 2
 	Game.press(SimStep.Intent.RIGHT)
 	Game._process(0.016)
 	Game.release(SimStep.Intent.RIGHT)
@@ -116,9 +118,9 @@ func test_other_turns_still_keep_the_walking_cadence() -> void:
 func test_holding_a_direction_still_walks_at_walking_speed() -> void:
 	_start_clock()
 	Game.press(SimStep.Intent.RIGHT)
-	for i: int in 10:
+	for i: int in 5:
 		Game._process(0.1)
-	assert_lt(Game.state.player.x - 1, 7, "at most one tile per two ticks after the first step")
+	assert_between(Game.state.player.x - 1, 5, 6, "one tile per tick, no faster")
 
 
 func test_no_early_tick_while_dead() -> void:
