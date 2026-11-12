@@ -4,7 +4,8 @@ extends Node3D
 
 const BOOT_SCENE: String = "res://scenes/boot.tscn"
 const KEY_SHAPES: Array[String] = ["♦", "●", "▲", "■"]
-const ECHO_PROMPT: String = "Tap ⌛ now!"
+const ECHO_PROMPT_TOUCH: String = "Tap ⌛ now!"
+const ECHO_PROMPT_KEYS: String = "Press R now! (Y on a gamepad)"
 const NO_REWINDS_TEXT: String = "No rewinds left. Tap Restart if you're stuck."
 const SCARS_TEXT: String = "The temple remembers %d of your deaths (max %d), even if you leave."
 const NO_FORGETS_TEXT: String = "Stuck? Tap Back, win any level for a Forget, then return."
@@ -29,6 +30,8 @@ var _hint: String = ""
 ## meta.teach_echo: this room teaches the hourglass, so prompt the player at the right moment.
 var _teach_echo: bool = false
 var _rewind_pulse: Tween
+## Steam is the target, so the on-screen joystick and the controls switch only appear on a touchscreen.
+var _touch: bool = DisplayServer.is_touchscreen_available()
 
 
 func _ready() -> void:
@@ -49,6 +52,8 @@ func _ready() -> void:
 	%NextButton.pressed.connect(_on_next)
 	%ControlsButton.pressed.connect(_on_toggle_controls)
 	%RewindButton.modulate = REWIND_IDLE_TINT
+	$HUD/TouchControls.visible = _touch
+	%ControlsButton.visible = _touch
 	_update_controls_button()
 	var path: String = Game.level_path if Game.level_path != "" else default_level
 	if not Game.load_level(path):
@@ -84,7 +89,7 @@ func _update_echo_prompt() -> void:
 		return
 	var button: Button = %RewindButton
 	if prompting:
-		_hint_label.text = ECHO_PROMPT
+		_hint_label.text = ECHO_PROMPT_TOUCH if _touch else ECHO_PROMPT_KEYS
 		button.modulate = REWIND_PROMPT_TINT
 		_rewind_pulse = create_tween().set_loops()
 		_rewind_pulse.tween_property(button, "scale", REWIND_PULSE_SCALE, REWIND_PULSE_SECONDS)
@@ -122,7 +127,7 @@ func _update_hud() -> void:
 		if s.keys[c] > 0:
 			keys += "  %s×%d" % [KEY_SHAPES[c], s.keys[c]]
 	_gems_label.text = "Gems %d/%d%s" % [s.gems_collected, s.gems_required, keys]
-	%RewindButton.text = "⌛ %d\nRewind" % Game.rewinds_left
+	%RewindButton.text = ("⌛ %d\nRewind" if _touch else "⌛ %d\nRewind [R]") % Game.rewinds_left
 	%RewindButton.disabled = Game.rewinds_left <= 0
 	%ForgetButton.visible = not s.scars.is_empty()
 	%ForgetButton.text = "Forget (%d)" % Save.forgets()

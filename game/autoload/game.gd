@@ -13,6 +13,8 @@ const RESPAWN_DELAY: float = 1.0
 ## The player moves at most once per this many ticks: 5 tiles/s at the 10 Hz tick. Objects still fall at 10 tiles/s.
 ## This is an input cadence, not a sim rule, so replays (which record per-tick intents) don't change.
 const MOVE_INTERVAL_TICKS: int = 2
+## How far the gamepad's left stick must be pushed before it counts as a direction.
+const STICK_DEAD_ZONE: float = 0.5
 
 ## Input actions registered at startup (remappable later through InputMap).
 const MOVE_ACTIONS: Dictionary = {
@@ -298,6 +300,13 @@ func _register_actions() -> void:
 		&"restart": [KEY_BACKSPACE],
 		&"rewind": [KEY_R],
 	}
+	## Left stick, as [axis, direction]. The action's dead zone keeps a resting stick from walking.
+	var sticks: Dictionary = {
+		&"move_up": [JOY_AXIS_LEFT_Y, -1.0],
+		&"move_down": [JOY_AXIS_LEFT_Y, 1.0],
+		&"move_left": [JOY_AXIS_LEFT_X, -1.0],
+		&"move_right": [JOY_AXIS_LEFT_X, 1.0],
+	}
 	var pads: Dictionary = {
 		&"move_up": JOY_BUTTON_DPAD_UP,
 		&"move_down": JOY_BUTTON_DPAD_DOWN,
@@ -309,7 +318,7 @@ func _register_actions() -> void:
 	for action: StringName in keys:
 		if InputMap.has_action(action):
 			continue
-		InputMap.add_action(action)
+		InputMap.add_action(action, STICK_DEAD_ZONE)
 		for keycode: int in keys[action]:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = keycode as Key
@@ -317,3 +326,8 @@ func _register_actions() -> void:
 		var pad := InputEventJoypadButton.new()
 		pad.button_index = pads[action] as JoyButton
 		InputMap.action_add_event(action, pad)
+		if sticks.has(action):
+			var stick := InputEventJoypadMotion.new()
+			stick.axis = sticks[action][0] as JoyAxis
+			stick.axis_value = sticks[action][1]
+			InputMap.action_add_event(action, stick)
